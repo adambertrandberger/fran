@@ -15,6 +15,7 @@ class Event {
     register() {
         this.registered = true;
     }
+    
     unregister() {
         this.registered = false;
     }
@@ -25,10 +26,7 @@ class Event {
 
         this.occ = () => {
             const occ = oldOcc();
-            return {
-                time: this.time,
-                val: occ.val ? lift(f(this.time, occ.val)) : null,
-            };
+            return new Tuple(this.time, occ.right() ? lift(f(this.time, occ.right())) : null);
         };
         
         return this;
@@ -86,10 +84,7 @@ class LBD extends Event {
             this.lbu = this.lbu ? this.lbu : new LBU();
         }
         
-        return {
-            time: this.time,
-            val: this.lbu,
-        };
+        return new Tuple(this.time, this.lbu);
     }
 }
 
@@ -115,10 +110,7 @@ class LBU extends Event {
     }
     
     occ() {
-        return {
-            time: this.time,
-            val: this.time > 0,
-        };
+        return new Tuple(this.time, this.time > 0);
     }
 }
 
@@ -155,10 +147,7 @@ class Predicate extends Event {
     }
     
     occ() {
-        return {
-            time: this.time,
-            val: this.time > 0 ? new Event() : null
-        };
+        return new Tuple(this.time, this.time > 0 ? new Event() : null);
     }
 }
 
@@ -175,10 +164,7 @@ class ConstEv extends Predicate {
     }
 
     occ() {
-        return {
-            time: this.time,
-            val: this.time > 0 ? this.val : null,
-        };
+        return new Tuple(this.time, this.time > 0 ? this.val : null);
     }
 }
 

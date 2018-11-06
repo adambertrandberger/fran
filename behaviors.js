@@ -4,20 +4,8 @@ class Behavior {
         this.isBehavior = true;
     }
 
-    untilB(e) {
-        return new Behavior(t => {
-            const occ = e.occ();
-
-            if (occ.time == null || t <= occ.time) {
-                return this.at(time);
-            } else {
-                return occ.val.at(time);
-            }
-        });
-    }
-    
     at(time) {
-        return this.f(time);
+        return new Tuple(this.f(time), this);
     }
 }
 
@@ -28,7 +16,7 @@ class BehaviorCombinator extends Behavior {
     }
     
     at(time) {
-        return this.b.at(time);
+        return new Tuple(this.b.at(time).left(), this);
     }
 }
 
@@ -40,7 +28,7 @@ class AddV extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time).add(this.b2.at(time));
+        return new Tuple(this.b1.at(time).left().add(this.b2.at(time).left()).right(), this);
     }
 }
 
@@ -51,7 +39,7 @@ class SubV extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time).sub(this.b2.at(time));
+        return new Tuple(this.b1.at(time).left().sub(this.b2.at(time).left()).right(), this);
     }
 }
 
@@ -63,7 +51,7 @@ class MulV extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time).mul(this.b2.at(time));
+        return new Tuple(this.b1.at(time).left().mul(this.b2.at(time).left()).right(), this);
     }
 }
 
@@ -75,7 +63,7 @@ class DivV extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time).div(this.b2.at(time));
+        return new Tuple(this.b1.at(time).left().div(this.b2.at(time).left()).right(), this);
     }
 }
 
@@ -87,7 +75,7 @@ class AddB extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time) + this.b2.at(time);
+        return new Tuple(this.b1.at(time).left() + this.b2.at(time).left(), this);
     }
 }
 
@@ -100,7 +88,7 @@ class SubB extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time) - this.b2.at(time);
+        return new Tuple(this.b1.at(time).left() - this.b2.at(time).left(), this);
     }
 }
 
@@ -112,7 +100,7 @@ class MulB extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time) * this.b2.at(time);
+        return new Tuple(this.b1.at(time).left() * this.b2.at(time).left(), this);
     }
 }
 
@@ -124,7 +112,7 @@ class DivB extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b1.at(time) / this.b2.at(time);
+        return new Tuple(this.b1.at(time).left() / this.b2.at(time).left(), this);
     }
 }
 
@@ -136,7 +124,7 @@ class Transform extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.f(this.b.at(time));
+        return new Tuple(this.f(this.b.at(time).left()), this);
     }
 }
 
@@ -150,40 +138,40 @@ class Cond extends BehaviorCombinator {
 
     at(time) {
         if (this.pred(this.b.at(time))) {
-            return this.then;
+            return new Tuple(this.then, this);
         } else {
-            return this.other;
+            return new Tuple(this.other, this);
         }
     }
 }
 
 class Time extends Behavior {
     at(time) {
-        return time;
+        return new Tuple(time, this);
     }
 }
 
 class Sin extends BehaviorCombinator {
     at(time) {
-        return Math.sin(this.b.at(time));
+        return new Tuple(Math.sin(this.b.at(time).left()), this);
     }
 }
 
 class Cos extends BehaviorCombinator {
     at(time) {
-        return Math.cos(this.b.at(time));
+        return new Tuple(Math.cos(this.b.at(time).left()), this);
     }
 }
 
 class Abs extends BehaviorCombinator {
     at(time) {
-        return Math.abs(this.b.at(time));
+        return new Tuple(Math.abs(this.b.at(time).left()), this);
     }
 }
 
 class Comp extends BehaviorCombinator {
     at(time) {
-        return -this.b.at(time);
+        return new Tuple(-this.b.at(time).left(), this);
     }
 }
 
@@ -194,21 +182,21 @@ class Later extends BehaviorCombinator {
     }
     
     at(time) {
-        return this.b.at(time-this.ms);
+        return new Tuple(this.b.at(time-this.ms).left(), this);
     }
 }
 
 class Squared extends BehaviorCombinator {
     at(time) {
-        const v = this.b.at(time);
-        return v*v;
+        const v = this.b.at(time).left();
+        return new Tuple(v*v, this);
     }
 }
 
 class Cubed extends BehaviorCombinator {
     at(time) {
-        const v = this.b.at(time);
-        return v*v;
+        const v = this.b.at(time).left();
+        return new Tuple(v*v, this);
     }
 }
 
@@ -219,7 +207,7 @@ class GT extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) > this.c;
+        return new Tuple(this.b.at(time).left() > this.c, this);
     }
 }
 
@@ -231,7 +219,7 @@ class LT extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) < this.c;
+        return new Tuple(this.b.at(time).left() < this.c, this);
     }
 }
 
@@ -243,7 +231,7 @@ class GTE extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) >= this.c;
+        return new Tuple(this.b.at(time).left() >= this.c, this);
     }
 }
 
@@ -255,7 +243,7 @@ class LTE extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) <= this.c;
+        return new Tuple(this.b.at(time).left() <= this.c, this);
     }
 }
 
@@ -267,7 +255,7 @@ class Eq extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) === this.c;
+        return new Tuple(this.b.at(time).left() === this.c, this);
     }
 }
 
@@ -278,7 +266,7 @@ class Add extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) + this.c;
+        return new Tuple(this.b.at(time).left() + this.c, this);
     }
 }
 
@@ -291,7 +279,7 @@ class Sub extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) - this.c;
+        return new Tuple(this.b.at(time).left() - this.c, this);
     }
 }
 
@@ -303,7 +291,7 @@ class Mul extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) * this.c;
+        return new Tuple(this.b.at(time).left() * this.c, this);
     }
 }
 
@@ -315,7 +303,7 @@ class Div extends BehaviorCombinator {
     }
 
     at(time) {
-        return this.b.at(time) / this.c;
+        return new Tuple(this.b.at(time).left() / this.c, this);
     }
 }
 
@@ -328,10 +316,10 @@ class Mouse extends Behavior {
     at(time) {
         const mouseAtStep = currentMouse;
         const delay = window.loopTime-time;
-        setTimeout(() => {
+        timeout(() => {
             this.value = mouseAtStep;
-        }, delay); // how do we know delay
-        return this.value;
+        }, delay);
+        return new Tuple(this.value, this);
     }
 }
 
@@ -348,7 +336,7 @@ class Verlet extends Behavior {
         this.oldPosition = this.position.clone();
         this.position.iadd(d);
 
-        return this.position;
+        return new Tuple(this.position, this);
     }
 }
 
@@ -364,13 +352,13 @@ class VerletGravity extends BehaviorCombinator {
 
 class MouseX extends Mouse {
     at(time) {
-        return super.at(time).x;
+        return new Tuple(super.at(time).left().x, this);
     }
 }
 
 class MouseY extends Mouse {
     at(time) {
-        return super.at(time).y;
+        return new Tuple(super.at(time).left().y, this);
     }
 }
 
@@ -399,7 +387,7 @@ class AccelMouse extends Behavior {
     }
 
     at(time) {
-        return this.b.at(time);
+        return new Tuple(this.b.at(time).left(), this);
     }
 }
 
@@ -425,7 +413,7 @@ class GoToMouse extends Behavior {
     }
 
     at(time) {
-        return this.b.at(time);
+        return new Tuple(this.b.at(time).left(), this);
     }
 }
 
@@ -477,3 +465,17 @@ const lt = (b, c) => new LT(b, c);
 const gte = (b, c) => new GTE(b, c);
 const lte = (b, c) => new LTE(b, c);
 const eq = (b, c) => new Eq(b, c);
+
+const untilB = (b, e) => {
+    b = lift(b);
+    return new Behavior(t => {
+        const occ = e.occ();
+
+        if (occ.left() == null || t <= occ.left()) {
+            return b.at(time).left();
+        } else {
+            return occ.right().at(time).left();
+        }
+    });
+};
+

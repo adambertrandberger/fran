@@ -19,6 +19,16 @@ Click on a button to run and show code
             <div id="fullscreen">
                 Full screen
             </div>
+            <div id="fps">
+                0
+            </div>
+            <script>
+             setInterval(function () {
+                 if (typeof fps !== 'undefined') {
+                     document.getElementById('fps').innerHTML = fps;
+                 }
+             }, 100);
+            </script>
             <canvas width="400" height="400"></canvas>
         </div>
         <style>
@@ -32,6 +42,17 @@ Click on a button to run and show code
              color: lightgray;
              position: fixed;
              right: 0;
+         }
+
+         #fps {
+             margin: auto;
+             position: absolute;
+             bottom: 0;
+             right: 0;
+         }
+
+         #fps::before {
+             content: 'Average FPS (totalFrames/timeSinceStart): ';
          }
 
          canvas {
@@ -142,7 +163,9 @@ Click on a button to run and show code
         </style>
 
         <!-- Put all scripts at bottom of body to ensure DOM elements are initialized before scripts -->
+        <script src="tuple.js"></script>
         <script src="vector.js"></script>
+        <script src="timer.js"></script>        
         <script src="behaviors.js"></script>
         <script src="events.js"></script>                
         <script src="image.js"></script>                                

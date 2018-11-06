@@ -27,7 +27,7 @@ const buttons = {
 
     leftMouseDown: () => {
         const ball = new Ball();
-        const b = lift(new Vector(50, 50)).untilB(lbd().handle(() => new Vector(100, 100)));
+        const b = untilB(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
         move(b, ball);
         return ball;
     },
@@ -37,11 +37,7 @@ const buttons = {
         // need to find change in position to get velocity
         //        predicate(gt(time(), 3000), 1000);
 
-        const b = lift(new Vector(50, 50)).untilB(
-            lbd().handleVal((lbu) =>
-                            lift(new Vector(200, 200))
-                            .untilB(lbu.handle(() => new Vector(400, 400))))
-        );
+        const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
         move(b, ball);
         
         return ball;
@@ -308,9 +304,8 @@ const buttons = {
         const d1 = stretch(swiggle, moveXY(pwaggle, 0, redBall));
         const d2 = stretch(swaggle, moveXY(0, pwiggle, blueBall));
         const d3 = stretch(nswiggle, moveXY(pwaggle, pwaggle, greenBall));
-        const d4 = stretch(nswiggle, moveXY(npwiggle, npwiggle, yellowBall));        
         
-        return moveXY(mouseX(), mouseY(), over(d4, d3, d2, d1));
+        return moveXY(mouseX(), mouseY(), over(d3, d2, d1));
     },
 
     /*
@@ -432,7 +427,7 @@ const buttons = {
 
         let delay = 100;
         let items = [];
-        for (let i=0; i<10; ++i) {
+        for (let i=0; i<40; ++i) {
             const b1 = new Ball();
             const b2 = new Ball({ fillStyle: 'pink' });
             
