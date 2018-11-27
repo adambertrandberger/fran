@@ -44,10 +44,10 @@ class Ball {
     render(ctx, time) {
         ctx.save();
         ctx.beginPath();
-        ctx.fillStyle = at(this.fillStyle, time).left();
-        ctx.strokeStyle = at(this.strokeStyle, time).left();
-        ctx.lineWidth = at(this.lineWidth, time).left();
-        ctx.arc(at(this.x, time).left(), at(this.y, time).left(), Math.max(at(this.r, time).left()-(ctx.lineWidth/2), 0), 0, 2*Math.PI);
+        ctx.fillStyle = at(this.fillStyle, time)[0];
+        ctx.strokeStyle = at(this.strokeStyle, time)[0];
+        ctx.lineWidth = at(this.lineWidth, time)[0];
+        ctx.arc(at(this.x, time)[0], at(this.y, time)[0], Math.max(at(this.r, time)[0]-(ctx.lineWidth/2), 0), 0, 2*Math.PI);
         ctx.stroke();
         ctx.fill();
         ctx.restore();
@@ -65,8 +65,8 @@ class Text {
 
     render(ctx, time) {
         ctx.save();
-        ctx.font = at(this.font, time).left();
-        ctx.fillText(this.text, at(this.x, time).left(), at(this.y, time).left());        
+        ctx.font = at(this.font, time)[0];
+        ctx.fillText(this.text, at(this.x, time)[0], at(this.y, time)[0]);        
         ctx.restore();
     }
 }

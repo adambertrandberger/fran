@@ -5,18 +5,35 @@ class Behavior {
     }
 
     at(time) {
-        return new Tuple(this.f(time), this);
+        return [this.f(time), this];
     }
 }
 
 class BehaviorCombinator extends Behavior {
     constructor(b) {
         super();
-        this.b = b;
+        this.b = lift(b);
     }
     
     at(time) {
-        return new Tuple(this.b.at(time).left(), this);
+        return [this.b.at(time)[0], this];
+    }
+}
+
+class UntilB extends BehaviorCombinator {
+    constructor(b, e) {
+        super(b);
+        this.e = e;
+    }
+
+    at(time) {
+        const occ = this.e.occ();
+
+        if (occ[0] == null || time <= occ[0]) {
+            return this.b.at(time);
+        } else {
+            return occ[1].at(time);
+        }
     }
 }
 
@@ -28,7 +45,7 @@ class AddV extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left().add(this.b2.at(time).left()).right(), this);
+        return [this.b1.at(time)[0].add(this.b2.at(time)[0])[1], this];
     }
 }
 
@@ -39,7 +56,7 @@ class SubV extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left().sub(this.b2.at(time).left()).right(), this);
+        return [this.b1.at(time)[0].sub(this.b2.at(time)[0])[1], this];
     }
 }
 
@@ -51,7 +68,7 @@ class MulV extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left().mul(this.b2.at(time).left()).right(), this);
+        return [this.b1.at(time)[0].mul(this.b2.at(time)[0])[1], this];
     }
 }
 
@@ -63,7 +80,7 @@ class DivV extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left().div(this.b2.at(time).left()).right(), this);
+        return [this.b1.at(time)[0].div(this.b2.at(time)[0])[1], this];
     }
 }
 
@@ -75,10 +92,9 @@ class AddB extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left() + this.b2.at(time).left(), this);
+        return [this.b1.at(time)[0] + this.b2.at(time)[0], this];
     }
 }
-
 
 class SubB extends BehaviorCombinator {
     constructor(b1, b2) {
@@ -88,7 +104,7 @@ class SubB extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left() - this.b2.at(time).left(), this);
+        return [this.b1.at(time)[0] - this.b2.at(time)[0], this];
     }
 }
 
@@ -100,7 +116,7 @@ class MulB extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left() * this.b2.at(time).left(), this);
+        return [this.b1.at(time)[0] * this.b2.at(time)[0], this];
     }
 }
 
@@ -112,7 +128,7 @@ class DivB extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b1.at(time).left() / this.b2.at(time).left(), this);
+        return [this.b1.at(time)[0] / this.b2.at(time)[0], this];
     }
 }
 
@@ -124,7 +140,7 @@ class Transform extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.f(this.b.at(time).left()), this);
+        return [this.f(this.b.at(time)[0]), this];
     }
 }
 
@@ -138,40 +154,53 @@ class Cond extends BehaviorCombinator {
 
     at(time) {
         if (this.pred(this.b.at(time))) {
-            return new Tuple(this.then, this);
+            return [this.then, this];
         } else {
-            return new Tuple(this.other, this);
+            return [this.other, this];
         }
     }
 }
 
 class Time extends Behavior {
     at(time) {
-        return new Tuple(time, this);
+        return [time, this];
+    }
+}
+
+class Noise extends Behavior {
+    constructor(val, range) {
+        super();
+        this.range = range;
+        this.val = val;
+    }
+    
+    at(time) {
+        const offset = Math.floor((Math.random()*range)+1);
+        return [time, this];
     }
 }
 
 class Sin extends BehaviorCombinator {
     at(time) {
-        return new Tuple(Math.sin(this.b.at(time).left()), this);
+        return [Math.sin(this.b.at(time)[0]), this];
     }
 }
 
 class Cos extends BehaviorCombinator {
     at(time) {
-        return new Tuple(Math.cos(this.b.at(time).left()), this);
+        return [Math.cos(this.b.at(time)[0]), this];
     }
 }
 
 class Abs extends BehaviorCombinator {
     at(time) {
-        return new Tuple(Math.abs(this.b.at(time).left()), this);
+        return [Math.abs(this.b.at(time)[0]), this];
     }
 }
 
 class Comp extends BehaviorCombinator {
     at(time) {
-        return new Tuple(-this.b.at(time).left(), this);
+        return [-this.b.at(time)[0], this];
     }
 }
 
@@ -182,21 +211,21 @@ class Later extends BehaviorCombinator {
     }
     
     at(time) {
-        return new Tuple(this.b.at(time-this.ms).left(), this);
+        return [this.b.at(time-this.ms)[0], this];
     }
 }
 
 class Squared extends BehaviorCombinator {
     at(time) {
-        const v = this.b.at(time).left();
-        return new Tuple(v*v, this);
+        const v = this.b.at(time)[0];
+        return [v*v, this];
     }
 }
 
 class Cubed extends BehaviorCombinator {
     at(time) {
-        const v = this.b.at(time).left();
-        return new Tuple(v*v, this);
+        const v = this.b.at(time)[0];
+        return [v*v*v, this];
     }
 }
 
@@ -207,7 +236,7 @@ class GT extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() > this.c, this);
+        return [this.b.at(time)[0] > this.c, this];
     }
 }
 
@@ -219,7 +248,7 @@ class LT extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() < this.c, this);
+        return [this.b.at(time)[0] < this.c, this];
     }
 }
 
@@ -231,7 +260,7 @@ class GTE extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() >= this.c, this);
+        return [this.b.at(time)[0] >= this.c, this];
     }
 }
 
@@ -243,7 +272,7 @@ class LTE extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() <= this.c, this);
+        return [this.b.at(time)[0] <= this.c, this];
     }
 }
 
@@ -255,7 +284,7 @@ class Eq extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() === this.c, this);
+        return [this.b.at(time)[0] === this.c, this];
     }
 }
 
@@ -266,7 +295,7 @@ class Add extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() + this.c, this);
+        return [this.b.at(time)[0] + this.c, this];
     }
 }
 
@@ -279,7 +308,7 @@ class Sub extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() - this.c, this);
+        return [this.b.at(time)[0] - this.c, this];
     }
 }
 
@@ -291,7 +320,7 @@ class Mul extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() * this.c, this);
+        return [this.b.at(time)[0] * this.c, this];
     }
 }
 
@@ -303,7 +332,7 @@ class Div extends BehaviorCombinator {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left() / this.c, this);
+        return [this.b.at(time)[0] / this.c, this];
     }
 }
 
@@ -316,10 +345,12 @@ class Mouse extends Behavior {
     at(time) {
         const mouseAtStep = currentMouse;
         const delay = window.loopTime-time;
+
         timeout(() => {
             this.value = mouseAtStep;
         }, delay);
-        return new Tuple(this.value, this);
+
+        return [this.value, this];
     }
 }
 
@@ -336,7 +367,7 @@ class Verlet extends Behavior {
         this.oldPosition = this.position.clone();
         this.position.iadd(d);
 
-        return new Tuple(this.position, this);
+        return [this.position, this];
     }
 }
 
@@ -352,13 +383,13 @@ class VerletGravity extends BehaviorCombinator {
 
 class MouseX extends Mouse {
     at(time) {
-        return new Tuple(super.at(time).left().x, this);
+        return [super.at(time)[0].x, this];
     }
 }
 
 class MouseY extends Mouse {
     at(time) {
-        return new Tuple(super.at(time).left().y, this);
+        return [super.at(time)[0].y, this];
     }
 }
 
@@ -387,7 +418,7 @@ class AccelMouse extends Behavior {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left(), this);
+        return [this.b.at(time)[0], this];
     }
 }
 
@@ -413,7 +444,7 @@ class GoToMouse extends Behavior {
     }
 
     at(time) {
-        return new Tuple(this.b.at(time).left(), this);
+        return [this.b.at(time)[0], this];
     }
 }
 
@@ -465,17 +496,4 @@ const lt = (b, c) => new LT(b, c);
 const gte = (b, c) => new GTE(b, c);
 const lte = (b, c) => new LTE(b, c);
 const eq = (b, c) => new Eq(b, c);
-
-const untilB = (b, e) => {
-    b = lift(b);
-    return new Behavior(t => {
-        const occ = e.occ();
-
-        if (occ.left() == null || t <= occ.left()) {
-            return b.at(time).left();
-        } else {
-            return occ.right().at(time).left();
-        }
-    });
-};
-
+const untilB = (b, e) => new UntilB(b, e);

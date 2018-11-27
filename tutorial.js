@@ -25,6 +25,17 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 
 const buttons = {
 
+    recursion: () => {
+        const ball = new Ball();
+        
+        function toggle(val, x, y) {
+            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
+        }
+
+        move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
+        return ball;
+    },
+
     leftMouseDown: () => {
         const ball = new Ball();
         const b = untilB(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
@@ -34,8 +45,6 @@ const buttons = {
 
     leftMouseDownThenUp: () => {
         const ball = new Ball();
-        // need to find change in position to get velocity
-        //        predicate(gt(time(), 3000), 1000);
 
         const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
         move(b, ball);
@@ -427,7 +436,7 @@ const buttons = {
 
         let delay = 100;
         let items = [];
-        for (let i=0; i<40; ++i) {
+        for (let i=0; i<10; ++i) {
             const b1 = new Ball();
             const b2 = new Ball({ fillStyle: 'pink' });
             
