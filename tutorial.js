@@ -25,6 +25,17 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 
 const buttons = {
 
+    wiggleWaggle: () => {
+        const blueBall = new Ball();
+        
+        // dividing time by 200 to get a slower animation
+        const wiggle = centerBX(boundX(sin(div(time(), 200))));        
+        const waggle = centerBY(boundY(cos(div(time(), 200))));
+        
+        return moveXY(wiggle, waggle, blueBall);
+    },
+    
+
     recursion: () => {
         const ball = new Ball();
         
@@ -49,12 +60,6 @@ const buttons = {
         const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
         move(b, ball);
         
-        return ball;
-    },
-
-    verlet: () => {
-        const ball = new Ball();
-        move(verlet(), ball);
         return ball;
     },
 
@@ -204,14 +209,6 @@ const buttons = {
         return over(...nums);
     },
 
-    wiggleWaggle: () => {
-        const blueBall = new Ball();
-        
-        // dividing time by 100 to get a slower animation
-        const wiggle = centerBX(boundX(sin(div(time(), 200))));
-        const waggle = centerBY(boundY(cos(div(time(), 200))));
-        return moveXY(wiggle, waggle, blueBall);
-    },
 
     wiggleWaggle2: () => {
         const blueBall = new Ball();
