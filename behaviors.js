@@ -16,40 +16,56 @@ class Behavior {
         return this;
     }
 
+    // Gives the behavior a chance to change its own reference
+    switch(time) {
+        return this;
+    }
+
     at(time) {
         time = this.transform(time);
-        return [this.value(time), this.behavior(time)];
+        const b = this.switch(time);        
+        return [b.value(time), b.behavior(time)];
     }
 }
 
+const cache = {};
 function BehaviorCombinator(arity=0) {
-    return class extends Behavior {
+    if (cache[arity]) {
+        return cache[arity];
+    }
+
+    return cache[arity] = class extends Behavior {
         constructor(...args) {
             super();
             
             const as = args.splice(args.length - arity);
             this.as = as;
             for (let i=0; i<this.as.length; ++i) {
-                this['a' + i] = this.as[i];
+                this['a' + (i+1)] = this.as[i];
             }
             
             this.bs = args.map(lift);
-            this.vs = [];
         }
 
         behavior(time) {
             return new this.constructor(...this.bs.concat(this.as));
+        }
+
+        value(time) {
+            if (this.vs.length === 1) {
+                return this.v1;
+            }
+            return this.vs;
         }
         
         at(time) {
             time = this.transform(time);
             
             this.vs = [];
-            // assign values and behaviors
             for (let i=0; i<this.bs.length; ++i) {
-                const b = this.bs[i].at(time);
-                this['v' + i] = b[0];
-                this['b' + i] = this.bs[i] = b[1];
+                const b = this.bs[i].switch(time).at(time);
+                this['v' + (i+1)] = b[0];
+                this['b' + (i+1)] = this.bs[i] = b[1];
 
                 this.vs.push(b[0]);
             }
@@ -111,22 +127,21 @@ class Later extends BehaviorCombinator() {
     }
 }
 
-class UntilB extends BehaviorCombinator() {
-    value(time) {
-        const occ = this.c.occ();
+class UntilB extends BehaviorCombinator(1) {
+    switch(time) {
+        const occ = this.a1.occ();
 
-        if (occ[0] == null || time <= occ[0]) {
+        if (occ[0] != null) {
+            return occ[1];
         } else {
-            this.b1 = occ[1];
+            return this;
         }
-        
-        return time;
     }
 }
 
-class Transform extends BehaviorCombinator() {
+class Transform extends BehaviorCombinator(1) {
     value(time) {
-        return this.c(this.v1);
+        return this.a1(this.v1);
     }
 }
 
