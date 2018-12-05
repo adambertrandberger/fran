@@ -1,6 +1,6 @@
 class Behavior {
     constructor(f) {
-        this.f = f|| (t => t);
+        this.f = f;
         this.isBehavior = true;
     }
 
@@ -22,128 +22,113 @@ class Behavior {
     }
 }
 
-class BehaviorCombinator extends Behavior {
-    constructor(...bs) {
-        super();
-        this.bs = bs.map(lift);
-        this.vs = [];
-    }
+function BehaviorCombinator(arity=0) {
+    return class extends Behavior {
+        constructor(...args) {
+            super();
+            
+            const as = args.splice(args.length - arity);
+            this.as = as;
+            for (let i=0; i<this.as.length; ++i) {
+                this['a' + i] = this.as[i];
+            }
+            
+            this.bs = args.map(lift);
+            this.vs = [];
+        }
 
-    behavior(time) {
-        return new this.constructor(...this.bs);
-    }
-    
-    at(time) {
-        time = this.transform(time);
-        
-        this.vs = [];
-        // assign values and behaviors
-        for (let i=0; i<this.bs.length; ++i) {
-            const b = this.bs[i].at(time);
-            this['v' + i] = b[0];
-            this['b' + i] = this.bs[i] = b[1];
-
-            this.vs.push(b[0]);
+        behavior(time) {
+            return new this.constructor(...this.bs.concat(this.as));
         }
         
-        return [this.value(time), this.behavior(time)];
-    }
-}
+        at(time) {
+            time = this.transform(time);
+            
+            this.vs = [];
+            // assign values and behaviors
+            for (let i=0; i<this.bs.length; ++i) {
+                const b = this.bs[i].at(time);
+                this['v' + i] = b[0];
+                this['b' + i] = this.bs[i] = b[1];
 
-function comb(name, vf) {
-    window[name] = class extends BehaviorCombinator {
-        value(time) {
-            return vf(...this.vs);
+                this.vs.push(b[0]);
+            }
+            
+            return [this.value(time), this.behavior(time)];
         }
     };
-
-    window[name.toLowerCase()] = (...args) => new window[name](...args);
 }
 
-class ConstantBehaviorCombinator extends BehaviorCombinator {
-    // takes behaviors then at the end should be a constant
-    constructor(...args) {
-        const c = args.splice(args.length - 1)[0];
-        super(...args);
-        this.c = c;
+function createBCFunctions(n=10) {
+    for (let i=0; i<n; ++i) {
+        window['bc' + i] = function (name, valueFunction) {
+            window[name] = class extends BehaviorCombinator(i) {
+                value(time) {
+                    return valueFunction(...this.vs.concat(this.as));
+                }
+            };
+
+            window[name.toLowerCase()] = (...args) => new window[name](...args);
+        };
     }
-
-    behavior(time) {
-        return new this.constructor(...(this.bs.concat(this.c)));
-    }
+    window.bc = window.bc0; // alias
 }
+createBCFunctions();
 
-function ccomb(name, vf) {
-    window[name] = class extends ConstantBehaviorCombinator {
-        value(time) {
-            return vf(...this.vs.concat([this.c]));
-        }
-    };
+bc0('AddV', (v1, v2) => v1.add(v2));
+bc0('SubV', (v1, v2) => v1.sub(v2));
+bc0('MulV', (v1, v2) => v1.mul(v2));
+bc0('DivV', (v1, v2) => v1.div(v2));
 
-    window[name.toLowerCase()] = (...args) => new window[name](...args);    
-}
+bc0('AddB', (v1, v2) => v1 + v2);
+bc0('SubB', (v1, v2) => v1 - v2);
+bc0('MulB', (v1, v2) => v1 * v2);
+bc0('DivB', (v1, v2) => v1 / v2);
 
-comb('AddV', (v1, v2) => v1.add(v2));
-comb('SubV', (v1, v2) => v1.sub(v2));
-comb('MulV', (v1, v2) => v1.mul(v2));
-comb('DivV', (v1, v2) => v1.div(v2));
+bc0('Sin', v1 => Math.sin(v1));
+bc0('Cos', v1 => Math.cos(v1));
 
-comb('AddB', (v1, v2) => v1 + v2);
-comb('SubB', (v1, v2) => v1 - v2);
-comb('MulB', (v1, v2) => v1 * v2);
-comb('DivB', (v1, v2) => v1 / v2);
+bc0('Abs', v1 => Math.abs(v1));
+bc0('Comp', v1 => -this.v1);
 
-comb('Sin', v1 => Math.sin(v1));
-comb('Cos', v1 => Math.cos(v1));
+bc0('Squared', v1 => v1*v1);
+bc0('Cubed', v1 => v1*v1*v1);
 
-comb('Abs', v1 => Math.abs(v1));
-comb('Comp', v1 => -this.v1);
+bc1('GT', (v1, a1) => v1 > a1);
+bc1('LT', (v1, a1) => v1 < a1);
+bc1('GTE', (v1, a1) => v1 >= a1);
+bc1('LTE', (v1, a1) => v1 <= a1);
+bc1('Eq', (v1, a1) => v1 == a1);
 
-comb('Squared', v1 => v1*v1);
-comb('Cubed', v1 => v1*v1*v1);
+bc1('Add', (v1, a1) => v1 + a1);
+bc1('Sub', (v1, a1) => v1 - a1);
+bc1('Mul', (v1, a1) => v1 * a1);
+bc1('Div', (v1, a1) => v1 / a1);
 
-ccomb('GT', (v1, c) => v1 > c);
-ccomb('LT', (v1, c) => v1 < c);
-ccomb('GTE', (v1, c) => v1 >= c);
-ccomb('LTE', (v1, c) => v1 <= c);
-ccomb('Eq', (v1, c) => v1 == c);
-
-ccomb('Add', (v1, c) => v1 + c);
-ccomb('Sub', (v1, c) => v1 - c);
-ccomb('Mul', (v1, c) => v1 * c);
-ccomb('Div', (v1, c) => v1 / c);
-
-class Later extends ConstantBehaviorCombinator {
+class Later extends BehaviorCombinator() {
     transform(time) {
         return time - this.ms;
     }
 }
 
-class UntilB extends ConstantBehaviorCombinator {
-    at(time) {
+class UntilB extends BehaviorCombinator() {
+    value(time) {
         const occ = this.c.occ();
 
         if (occ[0] == null || time <= occ[0]) {
-            return this.c.at(time);
         } else {
-            return occ[1].at(time);
+            this.b1 = occ[1];
         }
+        
+        return time;
     }
 }
 
-class Transform extends Behavior {
-    constructor(b, f) {
-        super();
-        this.f = f;
-        this.b = b;
-    }
-
-    at(time) {
-        return [this.f(this.b.at(time)[0]), this];
+class Transform extends BehaviorCombinator() {
+    value(time) {
+        return this.c(this.v1);
     }
 }
-
-class Time extends Behavior {}
 
 class Mouse extends Behavior {
     constructor() {
@@ -262,7 +247,7 @@ function lift(term) {
 
 const at = (b, t) => lift(b).at(t);
 const later = (b, ms) => new Later(b, ms);
-const time = () => new Time();
+const time = () => new Behavior(t => t);
 const cond = (b, c, then, other) => new Cond(b, c, then, other);
 const transform = (b, f) => new Transform(b, f);
 const mouseX = () => new MouseX();
