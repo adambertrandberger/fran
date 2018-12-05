@@ -28,6 +28,22 @@ class Behavior {
     }
 }
 
+/*
+ * BehaviorCombinator is a helper for combining behaviors and allows for taking in additional
+ * parameters via its constructor via the "arity" parameter.
+ *
+ * Example: "class AddThreeNumbers extends BehaviorCombinator(0)" means you want to make a Behavior named "AddThreeNumbers"
+ * which accepts 3 behaviors in the constructor and no other arguments. So you could say "new AddThreeNumbers(1, 2, 3)"
+ * Note how the arguments are lifted into behavior values. These 3 behaviors can be accessed in the value function by their 
+ * array "this.bs" or through "this.b1" (to select the first behavior passed in the constructor), "this.b2", or "this.b3".
+ *
+ * Example: "class AddTwoNumbersPlusAConstant extends BehaviorCombinator(1)" means you want to make a Behavior which
+ * accepts 2 behaviors and 1 number as an argument. So you could say "new AddTwoNumbersPlusAConstant(3, 4, 1)". Note
+ * that 3 and 4 will be lifted to behaviors while the 1 will _not_ be lifted. You can access the "3" and "4" behaviors with
+ * "this.b1" and "this.b2" respectively. Also you can access the constant Number "1" using "this.a1". If you used "BehaviorCombinator(2)",
+ * then it would have taken another position in the constructor for a constant (at the end), and that argument could be accessed with
+ * "this.a2".
+ */
 const cache = {};
 function BehaviorCombinator(arity=0) {
     if (cache[arity]) {
@@ -121,9 +137,9 @@ bc1('Sub', (v1, a1) => v1 - a1);
 bc1('Mul', (v1, a1) => v1 * a1);
 bc1('Div', (v1, a1) => v1 / a1);
 
-class Later extends BehaviorCombinator() {
+class Later extends BehaviorCombinator(1) {
     transform(time) {
-        return time - this.ms;
+        return time - this.a1;
     }
 }
 
@@ -172,24 +188,6 @@ class MouseX extends Mouse {
 class MouseY extends Mouse {
     value(time) {
         return super.value(time).y;
-    }
-}
-
-// Wrong -- must use new way
-class Cond extends Behavior {
-    constructor(b, pred, then, other) {
-        this.b = b;
-        this.pred = pred;
-        this.then = then;
-        this.other = other;
-    }
-
-    at(time) {
-        if (this.pred(this.b.at(time))) {
-            return [this.then, this];
-        } else {
-            return [this.other, this];
-        }
     }
 }
 
@@ -263,7 +261,6 @@ function lift(term) {
 const at = (b, t) => lift(b).at(t);
 const later = (b, ms) => new Later(b, ms);
 const time = () => new Behavior(t => t);
-const cond = (b, c, then, other) => new Cond(b, c, then, other);
 const transform = (b, f) => new Transform(b, f);
 const mouseX = () => new MouseX();
 const mouseY = () => new MouseY();

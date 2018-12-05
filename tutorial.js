@@ -24,6 +24,17 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 });
 
 const buttons = {
+    
+    recursiveUntilB: () => {
+        const ball = new Ball();
+        
+        function toggle(val, x, y) {
+            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
+        }
+
+        move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
+        return ball;
+    },
 
     wiggleWaggle: () => {
         const blueBall = new Ball();
@@ -33,18 +44,6 @@ const buttons = {
         const waggle = centerBY(boundY(cos(div(time(), 200))));
         
         return moveXY(wiggle, waggle, blueBall);
-    },
-    
-
-    recursion: () => {
-        const ball = new Ball();
-        
-        function toggle(val, x, y) {
-            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
-        }
-
-        move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
-        return ball;
     },
 
     leftMouseDown: () => {
@@ -351,14 +350,6 @@ const buttons = {
         return moveXY(centerX(), waggle, ball);
     },
 
-    cond: () => {
-        const ball = new Ball();
-
-        const waggle = centerBY(boundY(sin(div(time(), 500))));
-        withColor(cond(waggle, t => t > centerY(), 'pink', 'lightblue'), ball);
-        return moveXY(centerX, waggle, ball);
-    },
-
     transform: () => {
         let ball = new Ball();
 
@@ -455,26 +446,32 @@ const buttons = {
 
 let animation = null;
 
-window.image = Object.values(buttons)[0]();
-
+let clicked = false;
 for (const button in buttons) {
     const f = buttons[button];
     const e = document.createElement('a');
     e.text = button;
     e.className = 'button';
     
-    const code = document.querySelector('#code');    
-    e.addEventListener('click', function () {
+    const code = document.querySelector('#code');
+
+    function handler() {
         mousePositions = [];
         mouseTimes = [];
         window.loopTime = 0;
         window.image = f();
 
         code.innerHTML = f.toString();
-    });
+    }    
+    e.addEventListener('click', handler);
 
     const container = document.querySelector('#buttons');
     container.append(e);
+
+    if (!clicked) {
+        handler();
+        clicked = true;
+    }
 }
 
 let isFullscreen = false;
