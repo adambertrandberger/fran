@@ -1,0 +1,25 @@
+{
+  "name": "franjs",
+  "version": "1.0.0",
+  "description": "An implementation of Conal Elliot and Paul Hudak's Funcational Reactive Animation (Fran) Haskell library",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adambertrandberger/fran.git"
+  },
+  "keywords": [
+    "fran"
+  ],
+  "author": "Adam Bertrand Berger",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adambertrandberger/fran/issues"
+  },
+  "homepage": "https://github.com/adambertrandberger/fran#readme"
+}
