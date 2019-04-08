@@ -1,7 +1,7 @@
 {
   "name": "franjs",
   "version": "1.0.0",
-  "description": "An implementation of Conal Elliot and Paul Hudak's Funcational Reactive Animation (Fran) Haskell library",
+  "description": "An improved Javascript implementation of Conal Elliot and Paul Hudak's Funcational Reactive Animation (Fran) Haskell library",
   "main": "index.js",
   "directories": {
     "lib": "lib"
@@ -17,7 +17,7 @@
     "fran"
   ],
   "author": "Adam Bertrand Berger",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/adambertrandberger/fran/issues"
   },
