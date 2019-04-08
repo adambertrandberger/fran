@@ -1,3 +1,13 @@
+
+/* Ideas:
+ * We may not have to create a new object for the "behavior" callbacks
+ * If we just overwrite this.bs correctly, it may work
+ * 
+ * TODO:
+ * - Make events work via callbacks
+ * 
+ */
+
 class Behavior {
     constructor(f) {
         this.f = f;
@@ -17,6 +27,8 @@ class Behavior {
     }
 
     // Gives the behavior a chance to change its own reference
+    // this happens after any time transforms
+    // ordering for a behavior is transform => switch => return
     switch(time) {
         return this;
     }
@@ -76,17 +88,18 @@ function BehaviorCombinator(arity=0) {
         
         at(time) {
             time = this.transform(time);
-            
+
             this.vs = [];
             for (let i=0; i<this.bs.length; ++i) {
-                const b = this.bs[i].switch(time).at(time);
-                this['v' + (i+1)] = b[0];
-                this['b' + (i+1)] = this.bs[i] = b[1];
+                const other = this.bs[i].switch(time).at(time);
+                this['v' + (i+1)] = other[0];
+                this['b' + (i+1)] = this.bs[i] = other[1];
 
-                this.vs.push(b[0]);
+                this.vs.push(other[0]);
             }
             
-            return [this.value(time), this.behavior(time)];
+            const b = this.switch(time); // should this be done earlier?
+            return [b.value(time), b.behavior(time)];
         }
     };
 }
@@ -126,6 +139,8 @@ bc0('Comp', v1 => -this.v1);
 bc0('Squared', v1 => v1*v1);
 bc0('Cubed', v1 => v1*v1*v1);
 
+bc0('Mod', (v1, a1) => v1 % a1);
+
 bc1('GT', (v1, a1) => v1 > a1);
 bc1('LT', (v1, a1) => v1 < a1);
 bc1('GTE', (v1, a1) => v1 >= a1);
@@ -137,6 +152,8 @@ bc1('Sub', (v1, a1) => v1 - a1);
 bc1('Mul', (v1, a1) => v1 * a1);
 bc1('Div', (v1, a1) => v1 / a1);
 
+bc2('Cond', (v1, a1, a2) => v1 ? a1 : a2);
+
 class Later extends BehaviorCombinator(1) {
     transform(time) {
         return time - this.a1;
@@ -147,7 +164,7 @@ class UntilB extends BehaviorCombinator(1) {
     switch(time) {
         const occ = this.a1.occ();
 
-        if (occ[0] != null) {
+        if (occ[1] != null) {
             return occ[1];
         } else {
             return this;
@@ -258,17 +275,16 @@ function lift(term) {
     return new Behavior(term);
 }
 
-const at = (b, t) => lift(b).at(t);
-const later = (b, ms) => new Later(b, ms);
-const time = () => new Behavior(t => t);
-const transform = (b, f) => new Transform(b, f);
-const mouseX = () => new MouseX();
-const mouseY = () => new MouseY();
-const mouse = () => new Mouse();
-const accelMouseX = a => new AccelMouseX(a);
-const accelMouseY = a => new AccelMouseY(a);
-const accelMouse = a => new AccelMouse(a);
-const goToMouse = a => new GoToMouse(a);
-const verlet = a => new Verlet(a);
-const untilB = (b, e) => new UntilB(b, e);
-const neg = comp; // alias
+const at = (b, t) => lift(b).at(t),
+      later = (b, ms) => new Later(b, ms),
+      time = () => new Behavior(t => t),
+      transform = (b, f) => new Transform(b, f),
+      mouseX = () => new MouseX(),
+      mouseY = () => new MouseY(),
+      mouse = () => new Mouse(),
+      accelMouseX = a => new AccelMouseX(a),
+      accelMouseY = a => new AccelMouseY(a),
+      accelMouse = a => new AccelMouse(a),
+      goToMouse = a => new GoToMouse(a),
+      untilB = (b, e) => new UntilB(b, e),
+      neg = comp; // alias

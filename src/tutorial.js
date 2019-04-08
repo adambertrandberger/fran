@@ -23,7 +23,36 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
     return colorString;
 });
 
+
 const buttons = {
+    
+    arrows: () => {
+        const ball = new Ball();
+        
+        //  make this untilB recursive like the old version where you declare in a function
+        
+        moveXY(100, untilB(10, event(b => Arrow.seq([
+            new ElemArrow('body'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                b.update(200);
+                // add arrow.run here?
+            })
+        ]))), ball);
+        
+        return ball;
+    },
+    
+    transition1: () => {
+        const ball = new Ball();
+
+        function transition(duration, from, to) {
+            return untilB(from, predicate(gt(time(), duration)).handle(() => to));
+        }
+        
+        moveXY(100, 100, ball);
+        return ball;
+    },
     
     recursiveUntilB: () => {
         const ball = new Ball();

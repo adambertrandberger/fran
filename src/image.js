@@ -100,6 +100,5 @@ function ball(r) {
     return new Ball({ r });
 }
 
-// blueBall : Image_Ball
 const blueBall = ball(200);
 
