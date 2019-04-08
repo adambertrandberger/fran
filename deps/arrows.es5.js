@@ -6,6 +6,8 @@ var _get = function get(object, property, receiver) { if (object === null) objec
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
@@ -36,15 +38,16 @@ var parser = function () {
                     return [r[o - 2], r[o - 1]];case 2:
                     return [r[o - 4], r[o - 2], r[o - 1]];case 3:
                     this.$ = new NamedType(r[o]);break;case 4:
-                    this.$ = new SumType([r[o - 1]].concat(r[o]));break;case 5:
+                    this.$ = new SumType([new NamedType(r[o - 1])].concat(r[o]));break;case 5:
                     this.$ = new TopType();break;case 6:
                     this.$ = new ParamType(r[o]);break;case 7:
                     this.$ = new ArrayType(r[o - 1]);break;case 8:
                     this.$ = new TupleType(r[o - 1]);break;case 9:
                     this.$ = new TaggedUnionType(m(r[o - 1]));break;case 10:
-                    this.$ = new RecordType(m(r[o - 1]));break;case 11:case 13:case 25:
-                    this.$ = [r[o]];break;case 12:case 26:
-                    this.$ = [r[o - 1]].concat(r[o]);break;case 14:
+                    this.$ = new RecordType(m(r[o - 1]));break;case 11:
+                    this.$ = [new NamedType(r[o])];break;case 12:
+                    this.$ = [new NamedType(r[o - 1])].concat(r[o]);break;case 13:case 25:
+                    this.$ = [r[o]];break;case 14:
                     this.$ = [r[o - 2]].concat(r[o]);break;case 15:
                     this.$ = [[r[o - 2], r[o]]];break;case 16:
                     this.$ = [[r[o - 4], r[o - 2]]].concat(r[o]);break;case 17:
@@ -55,7 +58,8 @@ var parser = function () {
                     this.$ = [r[o - 2]].concat(r[o - 1]);break;case 22:
                     this.$ = [];break;case 23:
                     this.$ = r[o - 1];break;case 24:
-                    this.$ = new Constraint(r[o - 2], r[o]);}
+                    this.$ = new Constraint(r[o - 2], r[o]);break;case 26:
+                    this.$ = [r[o - 1]].concat(r[o]);}
         }, table: [{ 3: 1, 4: 2, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o }, { 1: [3] }, { 5: 10, 6: a, 7: [1, 11], 25: c }, t(l, [2, 3], { 9: 13, 22: y }), t(l, [2, 5]), { 8: [1, 15] }, { 4: 16, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o }, { 4: 18, 8: e, 10: n, 11: s, 12: i, 14: r, 15: 17, 17: h, 20: o }, { 8: u, 18: 19 }, { 8: u, 18: 21 }, { 6: [1, 22] }, { 4: 23, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o }, { 14: [1, 24] }, t(l, [2, 4]), { 8: [1, 25] }, t(l, [2, 6]), { 13: [1, 26] }, { 16: [1, 27] }, t(p, [2, 13], { 23: [1, 28] }), { 19: [1, 29] }, { 24: [1, 30] }, { 21: [1, 31] }, { 1: [2, 1] }, { 5: 32, 6: a, 25: c }, { 20: [1, 34], 26: 33 }, t(l, [2, 11], { 9: 35, 22: y }), t(l, [2, 7]), t(l, [2, 8]), { 4: 18, 8: e, 10: n, 11: s, 12: i, 14: r, 15: 36, 17: h, 20: o }, t(l, [2, 9]), { 4: 37, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o }, t(l, [2, 10]), { 6: [1, 38] }, { 23: [1, 39] }, { 4: 42, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o, 21: [1, 40], 28: 41 }, t(l, [2, 12]), t(p, [2, 14]), t(f, [2, 15], { 23: [1, 43] }), { 1: [2, 2] }, { 20: [1, 45], 27: 44 }, { 23: [2, 19] }, { 21: [1, 46], 23: g, 29: 47 }, { 30: [1, 49] }, { 8: u, 18: 50 }, { 16: [1, 51] }, { 4: 18, 8: e, 10: n, 11: s, 12: i, 14: r, 15: 53, 17: h, 20: o, 21: [1, 52] }, { 23: [2, 20] }, { 21: [1, 54] }, { 4: 42, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o, 28: 55 }, { 4: 56, 8: e, 10: n, 11: s, 12: i, 14: r, 17: h, 20: o }, t(f, [2, 16]), { 6: [2, 18] }, { 16: [2, 22] }, { 21: [1, 57] }, { 23: [2, 21] }, { 21: [2, 25], 23: g, 29: 58 }, t([21, 23], [2, 24]), { 16: [2, 23] }, { 21: [2, 26] }], defaultActions: { 22: [2, 1], 38: [2, 2], 40: [2, 19], 46: [2, 20], 51: [2, 18], 52: [2, 22], 54: [2, 21], 57: [2, 23], 58: [2, 26] }, parseError: function parseError(t, e) {
             if (!e.recoverable) {
                 var n = new Error(t);throw n.hash = e, n;
@@ -77,7 +81,7 @@ var parser = function () {
             }y.setInput(t, u.yy), u.yy.lexer = y, u.yy.parser = this, void 0 === y.yylloc && (y.yylloc = {});var f = y.yylloc;i.push(f);var g = y.options && y.options.ranges;"function" == typeof u.yy.parseError ? this.parseError = u.yy.parseError : this.parseError = Object.getPrototypeOf(this).parseError;for (var _, m, d, k, b, x, v, w, $, E = function E() {
                 var t;return "number" != typeof (t = y.lex() || 1) && (t = e.symbols_[t] || t), t;
             }, S = {};;) {
-                if (d = n[n.length - 1], void 0 === (k = this.defaultActions[d] ? this.defaultActions[d] : (null == _ && (_ = E()), r[d] && r[d][_])) || !k.length || !k[0]) {
+                if (d = n[n.length - 1], this.defaultActions[d] ? k = this.defaultActions[d] : (null == _ && (_ = E()), k = r[d] && r[d][_]), void 0 === k || !k.length || !k[0]) {
                     var I = "";for (x in $ = [], r[d]) {
                         this.terminals_[x] && 2 < x && $.push("'" + this.terminals_[x] + "'");
                     }I = y.showPosition ? "Parse error on line " + (o + 1) + ":\n" + y.showPosition() + "\nExpecting " + $.join(", ") + ", got '" + (this.terminals_[_] || _) + "'" : "Parse error on line " + (o + 1) + ": Unexpected " + (1 == _ ? "end of input" : "'" + (this.terminals_[_] || _) + "'"), this.parseError(I, { text: y.match, token: this.terminals_[_] || _, line: y.yylineno, loc: f, expected: $ });
@@ -265,16 +269,7 @@ Boolean.prototype.lift = function () {
     var value = this.valueOf();
 
     return new LiftedArrow(function () {
-        /* @arrow :: _ ~> Bool */
-        return value;
-    });
-};
-
-String.prototype.lift = function () {
-    var value = this.valueOf();
-
-    return new LiftedArrow(function () {
-        /* @arrow :: _ ~> String */
+        /* @arrow : _ ~> Bool */
         return value;
     });
 };
@@ -1435,17 +1430,21 @@ var SeqCombinator = function (_Combinator3) {
     }, {
         key: "call",
         value: function call(x, p, k, h) {
-            var i = 0;
-            var arrows = this.arrows;
-            var rec = function rec(y) {
-                if (i >= arrows.length - 1) {
-                    arrows[i].call(y, p, k, h);
+            var rec = function rec(y, _ref) {
+                var _ref2 = _toArray(_ref),
+                    head = _ref2[0],
+                    tail = _ref2.slice(1);
+
+                if (head === undefined) {
+                    k(y);
                 } else {
-                    arrows[i++].call(y, p, rec, h);
+                    head.call(y, p, function (z) {
+                        return rec(z, tail);
+                    }, h);
                 }
             };
 
-            rec(x);
+            rec(x, this.arrows);
         }
     }]);
 
@@ -1810,13 +1809,9 @@ var ProxyArrow = function (_Arrow6) {
     }, {
         key: "isAsync",
         value: function isAsync() {
-            if (this._isAsync === undefined) {
-                this._isAsync = false;
-                this._isAsync = this.ensureFrozen(function (a) {
-                    return a.isAsync();
-                });
-            }
-            return this._isAsync;
+            return this.ensureFrozen(function (a) {
+                return a.isAsync();
+            });
         }
     }, {
         key: "ensureFrozen",
@@ -2093,24 +2088,24 @@ var NamedType = function (_Type3) {
 
         var _this29 = _possibleConstructorReturn(this, (NamedType.__proto__ || Object.getPrototypeOf(NamedType)).call(this));
 
-        _this29.names = [name];
+        _this29.name = name;
         return _this29;
     }
 
     _createClass(NamedType, [{
         key: "equals",
         value: function equals(that) {
-            return that instanceof NamedType && this.names[0] === that.names[0];
+            return that instanceof NamedType && this.name === that.name;
         }
     }, {
         key: "toString",
         value: function toString() {
-            return this.names[0];
+            return this.name;
         }
     }, {
         key: "check",
         value: function check(value) {
-            if (!checkNamedType(this.names[0], value)) {
+            if (!checkNamedType(this.name, value)) {
                 _get(NamedType.prototype.__proto__ || Object.getPrototypeOf(NamedType.prototype), "check", this).call(this, value);
             }
         }
@@ -2549,12 +2544,16 @@ var Constraint = function () {
             var a = this.lower;
             var b = this.upper;
 
-            if (hasNames(a) && hasNames(b)) {
-                return a.names.every(function (t1) {
-                    return b.names.some(function (t2) {
-                        return t1 == t2;
+            if (a instanceof NamedType || a instanceof SumType) {
+                if (b instanceof NamedType || b instanceof SumType) {
+                    var na = a instanceof NamedType ? [a] : a.names;
+                    var nb = b instanceof NamedType ? [b] : b.names;
+                    return na.every(function (t1) {
+                        return nb.some(function (t2) {
+                            return t1.equals(t2);
+                        });
                     });
-                });
+                }
             }
 
             if (a instanceof ArrayType && b instanceof ArrayType) return true;
@@ -3094,18 +3093,18 @@ var ArrowType = function () {
             while (changed) {
                 changed = false;
 
-                var extraNeg = negDefs.filter(function (_ref) {
-                    var _ref2 = _slicedToArray(_ref, 2),
-                        a = _ref2[0],
-                        b = _ref2[1];
+                var extraNeg = negDefs.filter(function (_ref3) {
+                    var _ref4 = _slicedToArray(_ref3, 2),
+                        a = _ref4[0],
+                        b = _ref4[1];
 
                     return neg.some(function (p) {
                         return p === a;
                     });
-                }).reduce(function (c, _ref3) {
-                    var _ref4 = _slicedToArray(_ref3, 2),
-                        a = _ref4[0],
-                        b = _ref4[1];
+                }).reduce(function (c, _ref5) {
+                    var _ref6 = _slicedToArray(_ref5, 2),
+                        a = _ref6[0],
+                        b = _ref6[1];
 
                     return c.concat(b);
                 }, []).filter(function (x) {
@@ -3113,18 +3112,18 @@ var ArrowType = function () {
                         return p === x;
                     });
                 });
-                var extraPos = posDefs.filter(function (_ref5) {
-                    var _ref6 = _slicedToArray(_ref5, 2),
-                        a = _ref6[0],
-                        b = _ref6[1];
+                var extraPos = posDefs.filter(function (_ref7) {
+                    var _ref8 = _slicedToArray(_ref7, 2),
+                        a = _ref8[0],
+                        b = _ref8[1];
 
                     return pos.some(function (p) {
                         return p === a;
                     });
-                }).reduce(function (c, _ref7) {
-                    var _ref8 = _slicedToArray(_ref7, 2),
-                        a = _ref8[0],
-                        b = _ref8[1];
+                }).reduce(function (c, _ref9) {
+                    var _ref10 = _slicedToArray(_ref9, 2),
+                        a = _ref10[0],
+                        b = _ref10[1];
 
                     return c.concat(b);
                 }, []).filter(function (x) {
@@ -3177,12 +3176,17 @@ function lub(a, b) {
         return a;
     }
 
-    if (hasNames(a) && hasNames(b)) {
-        var na = a.names;
-        var nb = b.names;
-        return createNamedType(na.concat(nb.filter(function (n) {
-            return na.indexOf(n) < 0;
-        })));
+    if (a instanceof NamedType || a instanceof SumType) {
+        if (b instanceof NamedType || b instanceof SumType) {
+            var na = a instanceof NamedType ? [a] : a.names;
+            var nb = b instanceof NamedType ? [b] : b.names;
+            var nu = na.concat(nb.filter(function (n) {
+                return na.indexOf(n) < 0;
+            }));
+
+            if (nu.length == 1) return new NamedType(nu[0]);
+            if (nu.length >= 2) return new SumType(nu);
+        }
     }
 
     if (a instanceof TaggedUnionType && b instanceof TaggedUnionType) {
@@ -3230,14 +3234,18 @@ function glb(a, b) {
     if (a instanceof TopType) return b;
     if (b instanceof TopType) return a;
 
-    if (hasNames(a) && hasNames(b)) {
-        var names = a.names.filter(function (t1) {
-            return b.names.some(function (t2) {
-                return t1 == t2;
+    if (a instanceof NamedType || a instanceof SumType) {
+        if (b instanceof NamedType || b instanceof SumType) {
+            var na = a instanceof NamedType ? [a] : a.names;
+            var nb = b instanceof NamedType ? [b] : b.names;
+            var ni = na.filter(function (t1) {
+                return nb.some(function (t2) {
+                    return t1.equals(t2);
+                });
             });
-        });
-        if (names.length > 0) {
-            return createNamedType(names);
+
+            if (ni.length == 1) return new NamedType(ni[0]);
+            if (ni.length >= 2) return new SumType(ni);
         }
     }
 
@@ -3278,18 +3286,6 @@ function glb(a, b) {
     }
 
     throw new Error("No greatest lower bound of \"" + a.toString() + "\" and \"" + b.toString() + "\".");
-}
-
-function hasNames(t) {
-    return t instanceof NamedType || t instanceof SumType;
-}
-
-function createNamedType(names) {
-    if (names.length == 1) {
-        return new NamedType(names[0]);
-    }
-
-    return new SumType(names);
 }
 
 function getLocation(stack) {

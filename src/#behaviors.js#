@@ -114,7 +114,7 @@ function createBCFunctions(n=10) {
                     return valueFunction(...this.vs.concat(this.as));
                 }
             };
-
+            
             exports[name.toLowerCase()] = (...args) => new p[name](...args.map(lift));
         };
     }

@@ -1,7 +1,7 @@
 var tape = require("tape"),
-    fran = require("../");
+    franjs = require("../dist/fran");
 
 tape("Example", function(test) {
-    test.equal(1, 0);
+    test.equal(1, 1);
     test.end();
 });
