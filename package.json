@@ -1,25 +1,40 @@
 {
-  "name": "franjs",
-  "version": "1.0.0",
-  "description": "An improved Javascript implementation of Conal Elliot and Paul Hudak's Funcational Reactive Animation (Fran) Haskell library",
-  "main": "index.js",
-  "directories": {
-    "lib": "lib"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/adambertrandberger/fran.git"
-  },
-  "keywords": [
-    "fran"
-  ],
-  "author": "Adam Bertrand Berger",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/adambertrandberger/fran/issues"
-  },
-  "homepage": "https://github.com/adambertrandberger/fran#readme"
+    "name": "franjs",
+    "version": "1.0.0",
+    "description": "An improved Javascript implementation of Conal Elliot & Paul Hudak's Funcational Reactive Animation (Fran) Haskell library",
+    "main": "dist/fran.js",
+    "directories": {
+        "lib": "lib"
+    },
+    "scripts": {
+        "test": "tape 'tests/*.js'",
+        "build": "webpack --config webpack.config.js"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.4.3",
+        "babel-cli": "^6.26.0",
+        "babel-core": "^6.26.3",
+        "babel-loader": "^8.0.5",
+        "babel-preset-env": "^1.7.0",
+        "tape": "4",
+        "webpack": "^4.29.6",
+        "webpack-cli": "^3.3.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/adambertrandberger/franjs.git"
+    },
+    "keywords": [
+        "fran",
+        "functional",
+        "reactive",
+        "frp"
+    ],
+    "author": "Adam Bertrand Berger",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/adambertrandberger/fran/issues"
+    },
+    "homepage": "https://github.com/adambertrandberger/fran#readme",
+    "dependencies": {}
 }
