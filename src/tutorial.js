@@ -9,6 +9,17 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
+const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    new LiftedArrow(e => {
+        const x = e.clientX - e.target.offsetLeft,
+              y = e.clientY - e.target.offsetTop;
+
+        setTimeout(() => update(new Vector(x, y)), delay); // this is a hack
+    }),
+]));
+
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
     const maxLength = max;
@@ -24,113 +35,20 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 });
 
 const buttons = {
-    followMouseArrows: () => {
-        return moveXY(addb(30, untilB(0, event(update => Arrow.seq([
-            new ElemArrow('canvas'),
-            new EventArrow('mousemove'),
-            new LiftedArrow(e => {
-                update(e.clientX - e.target.offsetLeft);
-                console.log(e.clientX - e.target.offsetLeft);
-            })
-        ])))), untilB(0, event(update => Arrow.seq([
-            new ElemArrow('canvas'),
-            new EventArrow('mousemove'),
-            new LiftedArrow(e => {
+    text: () => {
+        const text = new Text({
+            text: 'aowiejfaowe'
+        });
 
-                update(e.clientY - e.target.offsetTop);
-            })
-        ]))), new Ball());
-    },
-    
-    arrows: () => {
-        return moveXY(untilB(10, event(update => Arrow.seq([
-            new ElemArrow('canvas'),
-            new EventArrow('click'),
-            new LiftedArrow(e => {
-                update(e.clientX - e.target.offsetLeft);
-            })
-        ]))), untilB(10, event(update => Arrow.seq([
-            new ElemArrow('canvas'),
-            new EventArrow('click'),
-            new LiftedArrow(e => {
-                update(e.clientY - e.target.offsetTop);
-            })
-        ]))), new Ball());
-    },
-
-    grow: () => {
-        const ball = new Ball();
-
-        // the "add" determines the minimum radius of the ball
-        // the "div" slows down the rate of the animation
-        // the "mul" extends the range of the cos function
-        const r = centerY()/4;
-        const waggle = add(mul(abs(cos(div(time(), 400))), centerY()-r), r);        
-        return stretch(waggle, moveXY(centerX(), centerY(), ball));
-    },
-    
-    transition1: () => {
-        const ball = new Ball();
-
-        function transition(duration, from, to) {
-            return untilB(from, predicate(gt(time(), duration)).handle(() => to));
-        }
-        
-        moveXY(100, 100, ball);
-        return ball;
-    },
-    
-    recursiveUntilB: () => {
-        const ball = new Ball();
-        
-        function toggle(val, x, y) {
-            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
-        }
-
-        move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
-        return ball;
-    },
-
-    wiggleWaggle: () => {
-        const blueBall = new Ball();
-        
-        // dividing time by 200 to get a slower animation
-        const wiggle = centerBX(boundX(sin(div(time(), 200))));        
-        const waggle = centerBY(boundY(cos(div(time(), 200))));
-        
-        return moveXY(wiggle, waggle, blueBall);
-    },
-
-    leftMouseDown: () => {
-        const ball = new Ball();
-        const b = untilB(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
-        move(b, ball);
-        return ball;
-    },
-
-    leftMouseDownThenUp: () => {
-        const ball = new Ball();
-
-        const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
-        move(b, ball);
-        
-        return ball;
-    },
-
-    grav: () => {
-        const ball = new Ball();
-        // need to find change in position to get velocity
-
-        move(accelMouse(0.1), ball);
-        
-        return ball;
+        move(mouse(100), text);
+        return text;
     },
     
     clock: () => {
         const delayStep = 50;
         let nums = [];
-
-        const goToMouse = t => later(mouse(), t);
+        
+        const goToMouse = t => mouse(t);
 
         // clock face - hours
         let delay = 0;
@@ -146,7 +64,7 @@ const buttons = {
             nums.unshift(img);
             delay += delayStep;
         }
-
+        
         // clock face - date
         delay = 0;
         const date = new Date();
@@ -263,6 +181,138 @@ const buttons = {
         return over(...nums);
     },
 
+    followMouseArrowsUBL: () => {
+        return moveXY(addb(30, untilBLoop(0, update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientX - e.target.offsetLeft);
+            })
+        ]))), untilBLoop(0, update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ])), new Ball());
+    },
+    
+    arrowsUBL: () => {
+        return moveXY(untilBLoop(10, update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                update(e.clientX - e.target.offsetLeft);
+            })
+        ])), untilBLoop(10, update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ])), new Ball());
+    },
+
+    followMouseArrows: () => {
+        return moveXY(addb(30, untilB(0, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientX - e.target.offsetLeft);
+            })
+        ])))), untilB(0, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ]))), new Ball());
+    },
+    
+    arrows: () => {
+        return moveXY(untilB(10, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                update(e.clientX - e.target.offsetLeft);
+            })
+        ]))), untilB(10, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ]))), new Ball());
+    },
+
+    grow: () => {
+        const ball = new Ball();
+
+        // the "add" determines the minimum radius of the ball
+        // the "div" slows down the rate of the animation
+        // the "mul" extends the range of the cos function
+        const r = centerY()/4;
+        const waggle = add(mul(abs(cos(div(time(), 400))), centerY()-r), r);        
+        return stretch(waggle, moveXY(centerX(), centerY(), ball));
+    },
+    
+    transition1: () => {
+        const ball = new Ball();
+
+        function transition(duration, from, to) {
+            return untilB(from, predicate(gt(time(), duration)).handle(() => to));
+        }
+        
+        moveXY(100, 100, ball);
+        return ball;
+    },
+    
+    recursiveUntilB: () => {
+        const ball = new Ball();
+        
+        function toggle(val, x, y) {
+            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
+        }
+
+        move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
+        return ball;
+    },
+
+    wiggleWaggle: () => {
+        const blueBall = new Ball();
+        
+        // dividing time by 200 to get a slower animation
+        const wiggle = centerBX(boundX(sin(div(time(), 200))));        
+        const waggle = centerBY(boundY(cos(div(time(), 200))));
+        
+        return moveXY(wiggle, waggle, blueBall);
+    },
+
+    leftMouseDown: () => {
+        const ball = new Ball();
+        const b = untilB(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
+        move(b, ball);
+        return ball;
+    },
+
+    leftMouseDownThenUp: () => {
+        const ball = new Ball();
+
+        const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
+        move(b, ball);
+        
+        return ball;
+    },
+
+    grav: () => {
+        const ball = new Ball();
+        // need to find change in position to get velocity
+
+        move(accelMouse(0.1), ball);
+        
+        return ball;
+    },
+    
 
     wiggleWaggle2: () => {
         const blueBall = new Ball();

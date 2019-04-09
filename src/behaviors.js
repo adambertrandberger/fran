@@ -8,6 +8,7 @@
  * 
  */
 
+
 class Behavior {
     constructor(f) {
         this.f = f;
@@ -37,6 +38,20 @@ class Behavior {
         time = this.transform(time);
         const b = this.switch(time);        
         return [b.value(time), b.behavior(time)];
+    }
+}
+
+// experimental
+class UntilBLoop extends Behavior {
+    constructor(b, af) {
+        let val = b;
+        super(t => val);
+        this.af = af;
+        this.a = af(newVal => val = newVal).seq((() => {
+            
+            this.a.run();
+        }).lift());
+        this.a.run();
     }
 }
 
@@ -73,6 +88,7 @@ function BehaviorCombinator(arity=0) {
             }
             
             this.bs = args.map(lift);
+            this.vs = [];
         }
 
         behavior(time) {
@@ -91,8 +107,9 @@ function BehaviorCombinator(arity=0) {
 
             this.vs = [];
             for (let i=0; i<this.bs.length; ++i) {
-                this.bs[i] = this.bs[i].switch(time);
-                const other = this.bs[i].at(time);
+                const reltime = this.bs[i].transform(time);
+                this.bs[i] = this.bs[i].switch(reltime);
+                const other = this.bs[i].at(reltime);
                 this['v' + (i+1)] = other[0];
                 this['b' + (i+1)] = this.bs[i] = other[1];
 
@@ -200,75 +217,6 @@ class Mouse extends Behavior {
     }
 }
 
-class MouseX extends Mouse {
-    value(time) {
-        return super.value(time).x;
-    }
-}
-
-class MouseY extends Mouse {
-    value(time) {
-        return super.value(time).y;
-    }
-}
-
-// could be improved
-class AccelMouse extends Behavior {
-    constructor(scalar) {
-        super();
-        
-        const topSpeed = 5;        
-        let position = new Vector();
-        let velocity = new Vector();
-        
-        this.b = transform(mouse(), i => {
-            const mouse = new Vector(i.x, i.y);
-            let desired = mouse.sub(position);
-
-            const d = desired.mag();
-            desired = desired.inorm();
-
-            let acceleration = desired.mul(scalar);
-
-            velocity = velocity.add(acceleration).limit(topSpeed);
-            position = position.add(velocity);
-
-            return position;
-        });
-    }
-
-    value(time) {
-        return this.b.at(time)[0];
-    }
-}
-
-// should be improved
-class GoToMouse extends Behavior {
-    constructor(scalar) {
-        super();
-        const topSpeed = 1;
-        
-        let position = new Vector();
-        let velocity = new Vector();
-        
-        this.b = transform(mouse(), i => {
-            let mouse = new Vector(i.x, i.y);
-            let direction = mouse.isub(position).inorm();
-
-            const acceleration = direction.mul(scalar);
-
-            velocity = velocity.add(acceleration).limit(topSpeed);
-            position = position.add(velocity);
-            
-            return position;
-        });
-    }
-
-    value(time) {
-        return this.b.at(time)[0];
-    }
-}
-
 function lift(term) {
     if (term.isBehavior) {
         return term; // assume its a behavior already
@@ -285,10 +233,11 @@ const at = (b, t) => lift(b).at(t),
       transform = (b, f) => new Transform(b, f),
       mouseX = () => new MouseX(),
       mouseY = () => new MouseY(),
-      mouse = () => new Mouse(),
+//      mouse = () => new Mouse(),
       accelMouseX = a => new AccelMouseX(a),
       accelMouseY = a => new AccelMouseY(a),
       accelMouse = a => new AccelMouse(a),
       goToMouse = a => new GoToMouse(a),
       untilB = (b, e) => new UntilB(b, e),
-      neg = comp; // alias
+      neg = comp, // alias
+      untilBLoop = (b, af) => new UntilBLoop(b, af);

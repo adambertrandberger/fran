@@ -7,8 +7,8 @@ function moveXY(b_x, b_y, image) {
 }
 
 function move(b_vector, image) {
-    image.x = transform(lift(b_vector), t => t.x);
-    image.y = transform(lift(b_vector), t => t.y);
+    registerB(image, 'x', transform(lift(b_vector), t => t.x));
+    registerB(image, 'y', transform(lift(b_vector), t => t.y));
     return image;
 }
 

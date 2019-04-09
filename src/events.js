@@ -1,8 +1,8 @@
 // event : Event_() -- the unit event
 class Event {
     constructor(af) {
+        this.af = af;
         this.a = af(this.update.bind(this)).seq((() => {
-            this.a.run();
         }).lift());
         this.a.run();
         this.b = null;
