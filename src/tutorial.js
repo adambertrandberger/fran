@@ -397,9 +397,11 @@ const buttons = {
         const swiggle = add(mul(sin(div(time(), speed)), 20), 30);
         const swaggle = add(mul(cos(div(time(), speed)), 20), 30);        
 
-        const d1 = stretch(swiggle, moveXY(pwaggle, 0, redBall));
-        const d2 = stretch(swaggle, moveXY(0, pwiggle, blueBall));
-        return moveXY(mouseX(), mouseY(), over(d1, d2));
+        const d1 = stretch(swiggle, moveXY(addb(pwaggle, mouseX()), addb(mouseY(), 0), redBall));
+        const d2 = stretch(swaggle, moveXY(addb(mouseX(), 0), addb(mouseY(), pwiggle), blueBall));
+
+        // TODO: for some reason returning moveXY(mouseX(), mouseY(), over(d1, d2)) did not work... look into that
+        return over(d1, d2);
     },
 
     atom2: () => {

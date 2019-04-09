@@ -2,7 +2,6 @@
 function moveXY(b_x, b_y, image) {
     registerB(image, 'x', b_x);
     registerB(image, 'y', b_y);    
-
     return image;
 }
 
@@ -88,8 +87,8 @@ class Over {
     constructor(...is) {
         this.is = is;
         
-        this.x = 0;
-        this.y = 0;
+        this.x = 100;
+        this.y = 100;
 
         registerB(this, 'x');
         registerB(this, 'y');
@@ -100,10 +99,13 @@ class Over {
     render(ctx) {
         if (!this.init) {
             for (const i of this.is) {
-                i.x = addb(lift(i.x), lift(this.x));
-                i.y = addb(lift(i.y), lift(this.y));
-                this.init = true;
+                //TODO: this all needs a fixin
+                //i.x = addb(lift(i.x), lift(this.x));
+                //i.y = addb(lift(i.y), lift(this.y));
+                //                registerB(i, 'x', addb(lift(i.x), lift(this.x)));
+                //                registerB(i, 'y', addb(lift(i.y), lift(this.y)));
             }
+            this.init = true;
         }
         
         for (const i of this.is) {
