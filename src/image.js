@@ -91,6 +91,9 @@ class Over {
         this.x = 0;
         this.y = 0;
 
+        registerB(this, 'x');
+        registerB(this, 'y');
+
         this.init = false;
     }
 

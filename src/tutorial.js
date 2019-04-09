@@ -20,6 +20,29 @@ const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => Arrow.seq([
     }),
 ]));
 
+const mouseY = (delay=0) => untilBLoop(0, update => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    new LiftedArrow(e => {
+        const x = e.clientX - e.target.offsetLeft,
+              y = e.clientY - e.target.offsetTop;
+
+        setTimeout(() => update(y), delay); // this is a hack
+    }),
+]));
+
+const mouseX = (delay=0) => untilBLoop(0, update => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    new LiftedArrow(e => {
+        const x = e.clientX - e.target.offsetLeft,
+              y = e.clientY - e.target.offsetTop;
+
+        setTimeout(() => update(x), delay); // this is a hack
+    }),
+]));
+
+
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
     const maxLength = max;
@@ -35,15 +58,6 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 });
 
 const buttons = {
-    text: () => {
-        const text = new Text({
-            text: 'aowiejfaowe'
-        });
-
-        move(mouse(100), text);
-        return text;
-    },
-    
     clock: () => {
         const delayStep = 50;
         let nums = [];
@@ -88,16 +102,16 @@ const buttons = {
                 text: todaysDate[i],
             });
             const radius = 70;
-            
+
             let x = mul(sin(add(div(time(), 2000), part)), radius);
             let y = mul(cos(add(div(time(), 2000), part)), radius);
             
-            let v = addv(goToMouse(delay), lift(new Vector(x, y)));
-
+            //            let v = addv(goToMouse(delay), lift(new Vector(x, y)));
+            
             const wiggle = mul(sin(div(time(), 100)), 100);
             const waggle = mul(cos(div(time(), 100)), 100);
 
-            move(v, img);
+            moveXY(addb(x, mouseX(delay)), addb(y, mouseY(delay)), img);
             nums.unshift(img);
             delay += delayStep;
         }
@@ -119,9 +133,9 @@ const buttons = {
             const x = mul(sin(rad), radius);
             const y = mul(cos(rad), radius);
 
-            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
+            //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            move(v, img);
+            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -144,9 +158,9 @@ const buttons = {
             const x = mul(sin(rad), radius);
             const y = mul(cos(rad), radius);
 
-            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
+            //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            move(v, img);
+            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -170,9 +184,9 @@ const buttons = {
             const x = mul(sin(rad), radius);
             const y = mul(cos(rad), radius);
 
-            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
+            //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            move(v, img);
+            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -181,6 +195,15 @@ const buttons = {
         return over(...nums);
     },
 
+    text: () => {
+        const text = new Text({
+            text: 'aowiejfaowe'
+        });
+
+        move(mouse(100), text);
+        return text;
+    },
+    
     followMouseArrowsUBL: () => {
         return moveXY(addb(30, untilBLoop(0, update => Arrow.seq([
             new ElemArrow('canvas'),
@@ -379,7 +402,6 @@ const buttons = {
         return moveXY(mouseX(), mouseY(), over(d1, d2));
     },
 
-
     atom2: () => {
         const speed = 200;
         
@@ -526,7 +548,7 @@ const buttons = {
             withColor(later(cycleRainbow(waggle, 1000), delay), b2);
             
             items.push(
-                moveXY(later(mouseX(), delay), later(mouseY(), delay),
+                moveXY(mouseX(delay), mouseY(delay),
                        over(
                            moveXY(later(wiggle, delay), 0, b1),
                            moveXY(0, later(waggle, delay), b2)                    
