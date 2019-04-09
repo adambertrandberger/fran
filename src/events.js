@@ -1,12 +1,21 @@
 // event : Event_() -- the unit event
 class Event {
-    constructor(a) {
-        this.a = a;
+    constructor(af) {
+        this.a = af(this.update.bind(this)).seq((() => {
+            this.a.run();
+        }).lift());
+        this.a.run();
         this.b = null;
-        this.handler = b => b;
-        a.call(null, new Progress(true), b => {
-            this.b = lift(this.handler(b));
-        }, err => { throw err; });
+
+        /*
+          a.call(null, new Progress(true), b => {
+          this.b = lift(this.handler(b));
+          }, err => { throw err; });
+        */
+    }
+
+    update(val) {
+        this.b = lift(val);
     }
 
     clone() {
@@ -19,12 +28,6 @@ class Event {
 
     occ(time) {
         return [this.time, this.val()];
-    }
-
-    // +=> : Event_alpha -> Arrow ((Time -> alpha) -> beta) -> Event_beta
-    handle(f) {
-        this.handler = f;
-        return this;
     }
 }
 

@@ -1,5 +1,4 @@
 let useSetTimeout = false;
-
 if (typeof requestAnimationFrame !== 'undefined' || useSetTimeout) {
     requestAnimationFrame = (f) => setTimeout(f, 16);
 }
@@ -11,7 +10,15 @@ function makeMainLoop(ctx, component) {
     const update = (time) => {
         if (window.image) {
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);            
-            window.image.render(ctx, time);
+            window.image.render(ctx);
+
+            for (const obj of regBehs.keys()) {
+                const behs = regBehs.get(obj);
+                for (const prop of behs.keys()) {
+                    const beh = behs.get(prop);
+                    obj[prop] = beh.at(time)[0];
+                }
+            }
             
             if (window.checkEvents) {
                 checkEvents(time);
@@ -25,6 +32,24 @@ function makeMainLoop(ctx, component) {
     };
 }
 
+// registered behaviors
+const regBehs = new Map();
+
+// registerB :: Func<Behavior<alpha>> -> Action<alpha>
+function registerB(obj, prop, beh=null) {
+    if (beh === null)
+        beh = obj[prop];
+    beh = lift(beh);
+    
+    const existing = regBehs.get(obj);
+    if (existing != null) {
+        existing.set(prop, beh);
+    } else {
+        const map = new Map();
+        map.set(prop, beh);
+        regBehs.set(obj, map);
+    }
+}
 
 let totalFrames = 0;
 let startTime = new Date();

@@ -37,4 +37,3 @@ canvas.addEventListener('mouseup', (e) => {
         }
     }
 });
-

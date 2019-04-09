@@ -25,22 +25,47 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
 
 
 const buttons = {
+    followMouseArrows: () => {
+        return moveXY(untilB(0, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientX - e.target.offsetLeft);
+            })
+        ]))), untilB(0, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('mousemove'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ]))), new Ball());
+    },
     
     arrows: () => {
-        const ball = new Ball();
-        
-        //  make this untilB recursive like the old version where you declare in a function
-        
-        moveXY(100, untilB(10, event(b => Arrow.seq([
-            new ElemArrow('body'),
+        return moveXY(untilB(10, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
-                b.update(200);
-                // add arrow.run here?
+                update(e.clientX - e.target.offsetLeft);
             })
-        ]))), ball);
-        
-        return ball;
+        ]))), untilB(10, event(update => Arrow.seq([
+            new ElemArrow('canvas'),
+            new EventArrow('click'),
+            new LiftedArrow(e => {
+                update(e.clientY - e.target.offsetTop);
+            })
+        ]))), new Ball());
+    },
+
+    grow: () => {
+        const ball = new Ball();
+
+        // the "add" determines the minimum radius of the ball
+        // the "div" slows down the rate of the animation
+        // the "mul" extends the range of the cos function
+        const r = centerY()/4;
+        const waggle = add(mul(abs(cos(div(time(), 400))), centerY()-r), r);        
+        return stretch(waggle, moveXY(centerX(), centerY(), ball));
     },
     
     transition1: () => {
@@ -246,17 +271,6 @@ const buttons = {
         const waggle = centerBY(boundY(cos(div(time(), 200))));
         
         return over(moveXY(wiggle, centerY(), redBall), moveXY(centerX(), waggle, blueBall));
-    },
-
-    grow: () => {
-        const ball = new Ball();
-
-        // the "add" determines the minimum radius of the ball
-        // the "div" slows down the rate of the animation
-        // the "mul" extends the range of the cos function
-        const r = centerY()/4;
-        const waggle = add(mul(abs(cos(div(time(), 400))), centerY()-r), r);        
-        return stretch(waggle, moveXY(centerX(), centerY(), ball));
     },
 
     dance: () => {

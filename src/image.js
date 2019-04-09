@@ -1,7 +1,8 @@
 // moveXY : Behavior_x -> Behavior_y -> Image -> Image
 function moveXY(b_x, b_y, image) {
-    image.x = b_x;
-    image.y = b_y;
+    registerB(image, 'x', b_x);
+    registerB(image, 'y', b_y);    
+
     return image;
 }
 
@@ -12,12 +13,12 @@ function move(b_vector, image) {
 }
 
 function stretch(b_r, image) {
-    image.r = b_r;
+    registerB(image, 'r', b_r);
     return image;
 }
 
 function withColor(b_fillStyle, image) {
-    image.fillStyle = b_fillStyle;
+    registerB(image, 'fillStyle', b_fillStyle);    
     return image;
 }
 
@@ -28,7 +29,7 @@ function over(...is) {
 
 // display : Image -> IO()
 function display(r, time) {
-    r.render(ctx, time);
+    r.render(ctx);
 }
 
 class Ball {
@@ -39,15 +40,22 @@ class Ball {
         this.lineWidth = i.lineWidth || 5;
         this.strokeStyle = i.strokeStyle || 'black';
         this.fillStyle = i.fillStyle || 'lightblue';
+
+        registerB(this, 'fillStyle');
+        registerB(this, 'strokeStyle');
+        registerB(this, 'lineWidth');
+        registerB(this, 'x');
+        registerB(this, 'y');
+        registerB(this, 'r');
     }
 
-    render(ctx, time) {
+    render(ctx) {
         ctx.save();
         ctx.beginPath();
-        ctx.fillStyle = at(this.fillStyle, time)[0];
-        ctx.strokeStyle = at(this.strokeStyle, time)[0];
-        ctx.lineWidth = at(this.lineWidth, time)[0];
-        ctx.arc(at(this.x, time)[0], at(this.y, time)[0], Math.max(at(this.r, time)[0]-(ctx.lineWidth/2), 0), 0, 2*Math.PI);
+        ctx.fillStyle = this.fillStyle;
+        ctx.strokeStyle = this.strokeStyle;
+        ctx.lineWidth = this.lineWidth;
+        ctx.arc(this.x, this.y, Math.max(this.r-(ctx.lineWidth/2), 0), 0, 2*Math.PI);
         ctx.stroke();
         ctx.fill();
         ctx.restore();
@@ -61,12 +69,17 @@ class Text {
         this.y = i.y || 0;
         this.text = i.text || '';
         this.font = '12px Arial'; // not configurable for now
+
+        registerB(this, 'font');
+        registerB(this, 'x');
+        registerB(this, 'y');
+        registerB(this, 'text');
     }
 
-    render(ctx, time) {
+    render(ctx) {
         ctx.save();
-        ctx.font = at(this.font, time)[0];
-        ctx.fillText(this.text, at(this.x, time)[0], at(this.y, time)[0]);        
+        ctx.font = this.font;
+        ctx.fillText(this.text, this.x, this.y);        
         ctx.restore();
     }
 }
@@ -81,7 +94,7 @@ class Over {
         this.init = false;
     }
 
-    render(ctx, time) {
+    render(ctx) {
         if (!this.init) {
             for (const i of this.is) {
                 i.x = addb(lift(i.x), lift(this.x));
@@ -91,7 +104,7 @@ class Over {
         }
         
         for (const i of this.is) {
-            i.render(ctx, time);
+            i.render(ctx);
         }
     }
 }
