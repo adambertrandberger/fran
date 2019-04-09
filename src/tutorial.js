@@ -23,19 +23,20 @@ const cycleRainbow = (b1, max) => transform(b1, t => {
     return colorString;
 });
 
-
 const buttons = {
     followMouseArrows: () => {
-        return moveXY(untilB(0, event(update => Arrow.seq([
+        return moveXY(addb(30, untilB(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
+                console.log(e.clientX - e.target.offsetLeft);
             })
-        ]))), untilB(0, event(update => Arrow.seq([
+        ])))), untilB(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
+
                 update(e.clientY - e.target.offsetTop);
             })
         ]))), new Ball());

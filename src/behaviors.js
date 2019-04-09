@@ -91,7 +91,8 @@ function BehaviorCombinator(arity=0) {
 
             this.vs = [];
             for (let i=0; i<this.bs.length; ++i) {
-                const other = this.bs[i].switch(time).at(time);
+                this.bs[i] = this.bs[i].switch(time);
+                const other = this.bs[i].at(time);
                 this['v' + (i+1)] = other[0];
                 this['b' + (i+1)] = this.bs[i] = other[1];
 
@@ -120,6 +121,9 @@ function createBCFunctions(n=10) {
 }
 createBCFunctions();
 
+// for below:
+// v1, v2, ..., vn are values which have been created from a nested behavior
+// a1, a2, ..., an are constants that were given thru the constructor
 bc0('AddV', (v1, v2) => v1.add(v2));
 bc0('SubV', (v1, v2) => v1.sub(v2));
 bc0('MulV', (v1, v2) => v1.mul(v2));
@@ -162,7 +166,7 @@ class Later extends BehaviorCombinator(1) {
 
 class UntilB extends BehaviorCombinator(1) {
     switch(time) {
-        const occ = this.a1.occ();
+        const occ = this.a1.occ(time);
 
         if (occ[1] != null) {
             return occ[1];

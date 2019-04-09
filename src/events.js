@@ -6,12 +6,6 @@ class Event {
         }).lift());
         this.a.run();
         this.b = null;
-
-        /*
-          a.call(null, new Progress(true), b => {
-          this.b = lift(this.handler(b));
-          }, err => { throw err; });
-        */
     }
 
     update(val) {
@@ -28,47 +22,6 @@ class Event {
 
     occ(time) {
         return [this.time, this.val()];
-    }
-}
-
-// lbd : Time -> Event_Event_() -- an event of a unit event
-class LBD extends Event {
-    constructor(afterTime=0) {
-        super();
-
-        this.afterTime = afterTime;
-        this.lbu = null;
-
-        lbds.push(this);
-    }
-
-    clone() {
-        return new this.constructor(this.afterTime);
-    }
-
-    occ() {
-        if (this.time > 0) {
-            this.lbu = this.lbu ? this.lbu : new LBU();
-        }
-        
-        return [this.time, this.lbu];
-    }
-}
-
-// lbu : Event_()
-class LBU extends Event {
-    constructor() {
-        super();
-
-        lbus.push(this);
-    }
-
-    clone() {
-        return new this.constructor();
-    }
-
-    occ() {
-        return [this.time, this.time > 0];
     }
 }
 
@@ -111,7 +64,5 @@ class ConstEv extends Predicate {
 }
 
 const event = a => new Event(a);
-const lbd = (t=0) => new LBD(t);
-const lbu = () => new LBU();
 const predicate = (b_bool, t=0) => new Predicate(b_bool, t);
 const constEv = (t, v) => new ConstEv(t, v);
