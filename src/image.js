@@ -48,6 +48,10 @@ class Ball {
         registerB(this, 'r');
     }
 
+    destroy() {
+        deregisterB(this);
+    }
+
     render(ctx) {
         ctx.save();
         ctx.beginPath();
@@ -75,6 +79,10 @@ class Text {
         registerB(this, 'text');
     }
 
+    destroy() {
+        deregisterB(this);
+    }
+
     render(ctx) {
         ctx.save();
         ctx.font = this.font;
@@ -94,6 +102,12 @@ class Over {
         registerB(this, 'y');
 
         this.init = false;
+    }
+
+    destroy() {
+        for (const i of this.is) {
+            i.destroy();
+        }
     }
 
     render(ctx) {

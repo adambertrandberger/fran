@@ -1,30 +1,81 @@
-let useSetTimeout = false;
-if (typeof requestAnimationFrame !== 'undefined' || useSetTimeout) {
-    requestAnimationFrame = (f) => setTimeout(f, 16);
-}
+class State {
+    constructor() {
+        this.behaviors = []; // registered behaviors
+        this.predicates = []; // predicate events
+    }
 
-/*
- * Returns a loop which renders all components to a HTML Canvas
- */
-function makeMainLoop(ctx, component) {
-    const update = (time) => {
-        if (window.image) {
-            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);            
-            window.image.render(ctx);
+    updateExternalBehaviors(time) {
+        for (const obj of this.behaviors.keys()) {
+            const behs = this.behaviors.get(obj);
+            for (const prop of behs.keys()) {
+                const beh = behs.get(prop);
+                obj[prop] = beh.at(time)[0];
+            }
+        }
+    }
 
-            for (const obj of regBehs.keys()) {
-                const behs = regBehs.get(obj);
-                for (const prop of behs.keys()) {
-                    const beh = behs.get(prop);
-                    obj[prop] = beh.at(time)[0];
+    updatePredicateEvents(time) {
+        for (const predicate of this.predicates) {
+            predicate.trigger(time);
+        }
+    }
+
+    // registerB :: Func<Behavior<alpha>> -> Action<alpha>
+    registerB(obj, prop, beh=null) {
+        if (beh === null)
+            beh = obj[prop];
+        beh = lift(beh);
+        
+        const existing = this.behaviors.get(obj);
+        if (existing != null) {
+            existing.set(prop, beh);
+        } else {
+            const map = new Map();
+            map.set(prop, beh);
+            this.behaviors.set(obj, map);
+        }
+    }
+
+    deregisterB(obj, prop=null) {
+        if (prop === null) {
+            const existing = this.behaviors.get(obj);
+            if (existing != null) {
+                for (const prop of existing.keys()) {
+                    const beh = existing.get(prop);
+                    if (typeof beh.destroy === 'function') {
+                        console.log('destroy');
+                        beh.destroy();
+                    }
                 }
             }
-            
-            if (window.checkEvents) {
-                checkEvents(time);
+            this.behaviors.delete(obj);
+        } else {
+            const existing = this.behaviors.get(obj);
+            if (existing != null) {
+                const beh = existing.get(prop);
+                if (typeof beh.destroy === 'function') {
+                    beh.destroy();
+                }
+                existing.delete(prop);
             }
-            timer.tick(time);
         }
+    }
+}
+
+function tick(time, state=null) {
+    if (state === null) {
+        state = new State();
+    }
+    state.updateExternalBehaviors(time);
+    state.updatePredicateEvents(time);
+    return state;
+}
+
+function makeMainLoop(render) {
+    const update = (time) => {
+        render();
+        tick(time);
+        timer.tick(time);
     };
 
     return {
@@ -32,24 +83,6 @@ function makeMainLoop(ctx, component) {
     };
 }
 
-// registered behaviors
-const regBehs = new Map();
-
-// registerB :: Func<Behavior<alpha>> -> Action<alpha>
-function registerB(obj, prop, beh=null) {
-    if (beh === null)
-        beh = obj[prop];
-    beh = lift(beh);
-    
-    const existing = regBehs.get(obj);
-    if (existing != null) {
-        existing.set(prop, beh);
-    } else {
-        const map = new Map();
-        map.set(prop, beh);
-        regBehs.set(obj, map);
-    }
-}
 
 let totalFrames = 0;
 let startTime = new Date();
@@ -59,20 +92,26 @@ const getElapsedSeconds = () => {
 let fps = 0;
 let countFpsUsingDelta = false;
 
-/*
- * Creates a render loop for all animations
- */
-const makeUpdateRenderLoop = (update) => {
-    const MS_PER_UPDATE = 10; // update every 10ms
+function getRAF(window, useSetTimeout=false) {
+    let raf = window.requestAnimationFrame;
+    if (typeof raf !== 'undefined' || useSetTimeout) {
+        raf = f => window.setTimeout(f, 16);
+    }
+    return raf;
+}
 
-    window.loopTime = 0;
+const makeUpdateRenderLoop = (update) => {
+    let loopTime = 0;
+    const MS_PER_UPDATE = 10, // update every 10ms
+          raf = getRAF(window);
     
     return () => {
         let t0 = new Date();
-        let deltaT = 0.0;
-
+        let deltaT = 0.0,
+            lastCalledTime = Date.now();
+        
         const loop = () => {
-            requestAnimationFrame(() => {
+            raf(() => {
                 if (countFpsUsingDelta) {
                     if(!startTime) {
                         startTime = Date.now();
@@ -87,7 +126,7 @@ const makeUpdateRenderLoop = (update) => {
                     fps = (totalFrames / getElapsedSeconds()).toFixed(2);
                 }
 
-                update(window.loopTime+=MS_PER_UPDATE);
+                update(loopTime+=MS_PER_UPDATE);
                 
                 loop();
             });

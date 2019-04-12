@@ -1,14 +1,3 @@
-
-/* Ideas:
- * We may not have to create a new object for the "behavior" callbacks
- * If we just overwrite this.bs correctly, it may work
- * 
- * TODO:
- * - Make events work via callbacks
- * 
- */
-
-
 class Behavior {
     constructor(f) {
         this.f = f;
@@ -38,20 +27,6 @@ class Behavior {
         time = this.transform(time);
         const b = this.switch(time);        
         return [b.value(time), b.behavior(time)];
-    }
-}
-
-// experimental
-class UntilBLoop extends Behavior {
-    constructor(b, af) {
-        let val = b;
-        super(t => val);
-        this.af = af;
-        this.a = af(newVal => val = newVal).seq((() => {
-            
-            this.a.run();
-        }).lift());
-        this.a.run();
     }
 }
 
@@ -93,6 +68,14 @@ function BehaviorCombinator(arity=0) {
 
         behavior(time) {
             return new this.constructor(...this.bs.concat(this.as));
+        }
+
+        destroy() {
+            for (const b of this.bs) {
+                if (typeof b.destroy === 'function') {
+                    b.destroy();
+                }
+            }
         }
 
         value(time) {
@@ -181,39 +164,25 @@ class Later extends BehaviorCombinator(1) {
     }
 }
 
-class UntilB extends BehaviorCombinator(1) {
-    switch(time) {
-        const occ = this.a1.occ(time);
-
-        if (occ[1] != null) {
-            return occ[1];
-        } else {
-            return this;
-        }
+class UntilB extends Behavior {
+    constructor(b, af) {
+        let val = b;
+        super(t => val);
+        
+        this.af = af;
+        this.a = af(newVal => val = newVal);
+        
+        this.p = this.a.run();
+    }
+    
+    destroy() {
+        this.p.cancel();
     }
 }
 
 class Transform extends BehaviorCombinator(1) {
     value(time) {
         return this.a1(this.v1);
-    }
-}
-
-class Mouse extends Behavior {
-    constructor() {
-        super();
-        this.pos = new Vector(0, 0);
-    }
-    
-    value(time) {
-        const mouseAtStep = currentMouse;
-        const delay = window.loopTime-time;
-
-        timeout(() => {
-            this.pos = mouseAtStep;
-        }, delay);
-
-        return this.pos;
     }
 }
 
@@ -231,13 +200,13 @@ const at = (b, t) => lift(b).at(t),
       later = (b, ms) => new Later(b, ms),
       time = () => new Behavior(t => t),
       transform = (b, f) => new Transform(b, f),
-//      mouseX = () => new MouseX(),
-//      mouseY = () => new MouseY(),
-//      mouse = () => new Mouse(),
+      //      mouseX = () => new MouseX(), // TODO: should add this
+      //      mouseY = () => new MouseY(),
+      //      mouse = () => new Mouse(),
       accelMouseX = a => new AccelMouseX(a),
       accelMouseY = a => new AccelMouseY(a),
       accelMouse = a => new AccelMouse(a),
       goToMouse = a => new GoToMouse(a),
-      untilB = (b, e) => new UntilB(b, e),
-      neg = comp, // alias
-      untilBLoop = (b, af) => new UntilBLoop(b, af);
+      untilB = (b, a) => new UntilB(b, a),
+      neg = comp; // alias
+//      untilBLoop = (b, af) => new UntilBLoop(b, af);

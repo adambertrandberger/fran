@@ -63,6 +63,6 @@ class ConstEv extends Predicate {
     }
 }
 
-const event = a => new Event(a);
-const predicate = (b_bool, t=0) => new Predicate(b_bool, t);
-const constEv = (t, v) => new ConstEv(t, v);
+const event = a => new Event(a),
+      predicate = (b_bool, t=0) => new Predicate(b_bool, t),
+      constEv = (t, v) => new ConstEv(t, v);

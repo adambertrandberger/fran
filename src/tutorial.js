@@ -9,39 +9,33 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
-const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => Arrow.seq([
+const arrowCtr = ab => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
+    ab,
+    a
+]));
+
+const mouse = (delay=0) => untilB(new Vector(0, 0), update => arrowCtr(
     new LiftedArrow(e => {
         const x = e.clientX - e.target.offsetLeft,
               y = e.clientY - e.target.offsetTop;
 
-        setTimeout(() => update(new Vector(x, y)), delay); // this is a hack
-    }),
-]));
+        setTimeout(() => update(new Vector(x, y)), delay); // this is what "fork" does
+    })));
 
-const mouseY = (delay=0) => untilBLoop(0, update => Arrow.seq([
-    new ElemArrow('canvas'),
-    new EventArrow('mousemove'),
+const mouseY = (delay=0) => untilB(0, update => arrowCtr(
     new LiftedArrow(e => {
-        const x = e.clientX - e.target.offsetLeft,
-              y = e.clientY - e.target.offsetTop;
+        const y = e.clientY - e.target.offsetTop;
+        setTimeout(() => update(y), delay); //this is what "fork" does
+    })));
 
-        setTimeout(() => update(y), delay); // this is a hack
-    }),
-]));
-
-const mouseX = (delay=0) => untilBLoop(0, update => Arrow.seq([
-    new ElemArrow('canvas'),
-    new EventArrow('mousemove'),
+const mouseX = (delay=0) => untilB(0, update => arrowCtr(
     new LiftedArrow(e => {
-        const x = e.clientX - e.target.offsetLeft,
-              y = e.clientY - e.target.offsetTop;
+        const x = e.clientX - e.target.offsetLeft;
 
-        setTimeout(() => update(x), delay); // this is a hack
-    }),
-]));
-
+        setTimeout(() => update(x), delay); // this is what "fork" does
+    })));
 
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
@@ -61,6 +55,7 @@ const buttons = {
     clock: () => {
         const delayStep = 50;
         let nums = [];
+
         
         const goToMouse = t => mouse(t);
 
@@ -73,8 +68,10 @@ const buttons = {
             const img = new Text({
                 text: +i,
             });
+
             const radius = 50;
             move(addv(goToMouse(delay), lift(new Vector(Math.cos(part)*50, Math.sin(part)*50))), img);
+            //            setTimeout(() => deregisterB(img, 'x'), 5000);  // TODO to show how to freeze a behavior
             nums.unshift(img);
             delay += delayStep;
         }
@@ -205,13 +202,13 @@ const buttons = {
     },
     
     followMouseArrowsUBL: () => {
-        return moveXY(addb(30, untilBLoop(0, update => Arrow.seq([
+        return moveXY(addb(30, untilB(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ]))), untilBLoop(0, update => Arrow.seq([
+        ]))), untilB(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
@@ -221,13 +218,13 @@ const buttons = {
     },
     
     arrowsUBL: () => {
-        return moveXY(untilBLoop(10, update => Arrow.seq([
+        return moveXY(untilB(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ])), untilBLoop(10, update => Arrow.seq([
+        ])), untilB(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
@@ -587,6 +584,8 @@ for (const button in buttons) {
     container.append(e);
 
     if (!clicked) {
+        if (window.image)
+            window.image.destroy();
         handler();
         clicked = true;
     }

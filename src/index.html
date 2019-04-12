@@ -175,5 +175,16 @@ Click on a button to run and show code
         <script src="interpolation.js"></script>        
         <script src="start.js"></script>
         <script src="tutorial.js"></script>
+
+        <script>
+         const canvas = document.querySelector('canvas');
+         const ctx = canvas.getContext('2d');
+         
+         const frame = makeMainLoop(ctx, () => {
+             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+             window.image.render(ctx);
+         });
+         frame.init();
+        </script>
     </body>
 </html>
