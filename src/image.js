@@ -1,34 +1,29 @@
 // moveXY : Behavior_x -> Behavior_y -> Image -> Image
 function moveXY(b_x, b_y, image) {
-    registerB(image, 'x', b_x);
-    registerB(image, 'y', b_y);    
+    image.x = b_x;
+    image.y = b_y;    
     return image;
 }
 
 function move(b_vector, image) {
-    registerB(image, 'x', transform(lift(b_vector), t => t.x));
-    registerB(image, 'y', transform(lift(b_vector), t => t.y));
+    image.x = transform(lift(b_vector), t => t.x);
+    image.y = transform(lift(b_vector), t => t.y);
     return image;
 }
 
 function stretch(b_r, image) {
-    registerB(image, 'r', b_r);
+    image.r = b_r;
     return image;
 }
 
 function withColor(b_fillStyle, image) {
-    registerB(image, 'fillStyle', b_fillStyle);    
+    image.fillStyle = b_fillStyle;    
     return image;
 }
 
 // over : Behavior_Image -> Behavior_Image -> Behavior_Image
 function over(...is) {
     return new Over(...is);
-}
-
-// display : Image -> IO()
-function display(r, time) {
-    r.render(ctx);
 }
 
 class Ball {
@@ -40,16 +35,12 @@ class Ball {
         this.strokeStyle = i.strokeStyle || 'black';
         this.fillStyle = i.fillStyle || 'lightblue';
 
-        registerB(this, 'fillStyle');
-        registerB(this, 'strokeStyle');
-        registerB(this, 'lineWidth');
-        registerB(this, 'x');
-        registerB(this, 'y');
-        registerB(this, 'r');
-    }
-
-    destroy() {
-        deregisterB(this);
+        fran.defineBehavior(this, 'fillStyle');
+        fran.defineBehavior(this, 'strokeStyle');
+        fran.defineBehavior(this, 'lineWidth');
+        fran.defineBehavior(this, 'x');
+        fran.defineBehavior(this, 'y');
+        fran.defineBehavior(this, 'r');
     }
 
     render(ctx) {
@@ -73,14 +64,10 @@ class Text {
         this.text = i.text || '';
         this.font = '12px Arial'; // not configurable for now
 
-        registerB(this, 'font');
-        registerB(this, 'x');
-        registerB(this, 'y');
-        registerB(this, 'text');
-    }
-
-    destroy() {
-        deregisterB(this);
+        fran.defineBehavior(this, 'font');
+        fran.defineBehavior(this, 'x');
+        fran.defineBehavior(this, 'y');
+        fran.defineBehavior(this, 'text');
     }
 
     render(ctx) {
@@ -98,8 +85,8 @@ class Over {
         this.x = 100;
         this.y = 100;
 
-        registerB(this, 'x');
-        registerB(this, 'y');
+        fran.defineBehavior(this, 'x');
+        fran.defineBehavior(this, 'y');
 
         this.init = false;
     }
@@ -127,10 +114,3 @@ class Over {
         }
     }
 }
-
-function ball(r) {
-    return new Ball({ r });
-}
-
-const blueBall = ball(200);
-

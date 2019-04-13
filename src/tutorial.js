@@ -16,7 +16,7 @@ const arrowCtr = ab => Arrow.fix(a => Arrow.seq([
     a
 ]));
 
-const mouse = (delay=0) => untilB(new Vector(0, 0), update => arrowCtr(
+const mouse = (delay=0) => until(new Vector(0, 0), update => arrowCtr(
     new LiftedArrow(e => {
         const x = e.clientX - e.target.offsetLeft,
               y = e.clientY - e.target.offsetTop;
@@ -24,13 +24,13 @@ const mouse = (delay=0) => untilB(new Vector(0, 0), update => arrowCtr(
         setTimeout(() => update(new Vector(x, y)), delay); // this is what "fork" does
     })));
 
-const mouseY = (delay=0) => untilB(0, update => arrowCtr(
+const mouseY = (delay=0) => until(0, update => arrowCtr(
     new LiftedArrow(e => {
         const y = e.clientY - e.target.offsetTop;
         setTimeout(() => update(y), delay); //this is what "fork" does
     })));
 
-const mouseX = (delay=0) => untilB(0, update => arrowCtr(
+const mouseX = (delay=0) => until(0, update => arrowCtr(
     new LiftedArrow(e => {
         const x = e.clientX - e.target.offsetLeft;
 
@@ -202,13 +202,13 @@ const buttons = {
     },
     
     followMouseArrowsUBL: () => {
-        return moveXY(addb(30, untilB(0, update => Arrow.seq([
+        return moveXY(addb(30, until(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ]))), untilB(0, update => Arrow.seq([
+        ]))), until(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
@@ -218,13 +218,13 @@ const buttons = {
     },
     
     arrowsUBL: () => {
-        return moveXY(untilB(10, update => Arrow.seq([
+        return moveXY(until(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ])), untilB(10, update => Arrow.seq([
+        ])), until(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
@@ -234,13 +234,13 @@ const buttons = {
     },
 
     followMouseArrows: () => {
-        return moveXY(addb(30, untilB(0, event(update => Arrow.seq([
+        return moveXY(addb(30, until(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ])))), untilB(0, event(update => Arrow.seq([
+        ])))), until(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
@@ -250,13 +250,13 @@ const buttons = {
     },
     
     arrows: () => {
-        return moveXY(untilB(10, event(update => Arrow.seq([
+        return moveXY(until(10, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ]))), untilB(10, event(update => Arrow.seq([
+        ]))), until(10, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
@@ -280,7 +280,7 @@ const buttons = {
         const ball = new Ball();
 
         function transition(duration, from, to) {
-            return untilB(from, predicate(gt(time(), duration)).handle(() => to));
+            return until(from, predicate(gt(time(), duration)).handle(() => to));
         }
         
         moveXY(100, 100, ball);
@@ -291,7 +291,7 @@ const buttons = {
         const ball = new Ball();
         
         function toggle(val, x, y) {
-            return untilB(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
+            return until(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
         }
 
         move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
@@ -310,7 +310,7 @@ const buttons = {
 
     leftMouseDown: () => {
         const ball = new Ball();
-        const b = untilB(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
+        const b = until(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
         move(b, ball);
         return ball;
     },
@@ -318,7 +318,7 @@ const buttons = {
     leftMouseDownThenUp: () => {
         const ball = new Ball();
 
-        const b = untilB(new Vector(50, 50), lbd().handleVal((lbu) => untilB(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
+        const b = until(new Vector(50, 50), lbd().handleVal((lbu) => until(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
         move(b, ball);
         
         return ball;
