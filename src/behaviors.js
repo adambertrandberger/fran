@@ -43,15 +43,17 @@ class Behavior {
 
 // experimental
 class UntilBLoop extends Behavior {
-    constructor(b, af) {
+    constructor(b, cb) {
         let val = b;
         super(t => val);
-        this.af = af;
-        this.a = af(newVal => val = newVal).seq((() => {
-            
-            this.a.run();
-        }).lift());
-        this.a.run();
+        callbacks.push(cb(newVal => val = newVal));
+        /*
+          this.af = af;
+          this.a = af(newVal => val = newVal).seq((() => {
+          this.a.run();
+          }).lift());
+          this.a.run();
+        */
     }
 }
 
@@ -231,9 +233,9 @@ const at = (b, t) => lift(b).at(t),
       later = (b, ms) => new Later(b, ms),
       time = () => new Behavior(t => t),
       transform = (b, f) => new Transform(b, f),
-//      mouseX = () => new MouseX(),
-//      mouseY = () => new MouseY(),
-//      mouse = () => new Mouse(),
+      //      mouseX = () => new MouseX(),
+      //      mouseY = () => new MouseY(),
+      //      mouse = () => new Mouse(),
       accelMouseX = a => new AccelMouseX(a),
       accelMouseY = a => new AccelMouseY(a),
       accelMouse = a => new AccelMouse(a),

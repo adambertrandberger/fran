@@ -9,39 +9,34 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
-const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => Arrow.seq([
+let callbacks = [];
+const globalArrow = Arrow.fix( a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     new LiftedArrow(e => {
-        const x = e.clientX - e.target.offsetLeft,
-              y = e.clientY - e.target.offsetTop;
-
-        setTimeout(() => update(new Vector(x, y)), delay); // this is a hack
+        for (callback of callbacks) {
+            callback(e);
+        }
     }),
+    a
 ]));
+globalArrow.run();
 
-const mouseY = (delay=0) => untilBLoop(0, update => Arrow.seq([
-    new ElemArrow('canvas'),
-    new EventArrow('mousemove'),
-    new LiftedArrow(e => {
-        const x = e.clientX - e.target.offsetLeft,
-              y = e.clientY - e.target.offsetTop;
+const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => e => {     
+    const x = e.clientX - e.target.offsetLeft,
+          y = e.clientY - e.target.offsetTop;
+    setTimeout(() => update(new Vector(x, y)), delay);
+});
 
-        setTimeout(() => update(y), delay); // this is a hack
-    }),
-]));
+const mouseX = (delay=0) => untilBLoop(0, update => e => {
+    const x = e.clientX - e.target.offsetLeft;
+    setTimeout(() => update(x), delay);
+});
 
-const mouseX = (delay=0) => untilBLoop(0, update => Arrow.seq([
-    new ElemArrow('canvas'),
-    new EventArrow('mousemove'),
-    new LiftedArrow(e => {
-        const x = e.clientX - e.target.offsetLeft,
-              y = e.clientY - e.target.offsetTop;
-
-        setTimeout(() => update(x), delay); // this is a hack
-    }),
-]));
-
+const mouseY = (delay=0) => untilBLoop(0, update => e => {
+    const y = e.clientY - e.target.offsetTop;
+    setTimeout(() => update(y), delay);
+});
 
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
