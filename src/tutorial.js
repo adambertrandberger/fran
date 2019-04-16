@@ -10,31 +10,35 @@ const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
 let callbacks = [];
-const globalArrow = Arrow.fix( a => Arrow.seq([
+const globalArrow = Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     new LiftedArrow(e => {
+        const x = e.clientX - e.target.offsetLeft,
+              y = e.clientY - e.target.offsetTop;
         for (callback of callbacks) {
-            callback(e);
+            callback(x, y);
         }
     }),
     a
 ]));
 globalArrow.run();
 
-const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => e => {     
-    const x = e.clientX - e.target.offsetLeft,
-          y = e.clientY - e.target.offsetTop;
+
+
+const mouse = (delay=0) => untilBLoop(new Vector(0, 0), update => (x, y) => {     
     setTimeout(() => update(new Vector(x, y)), delay);
 });
 
-const mouseX = (delay=0) => untilBLoop(0, update => e => {
-    const x = e.clientX - e.target.offsetLeft;
-    setTimeout(() => update(x), delay);
+const mouseX = (delay=0) => untilBLoop(0, update => {
+    callbacks.push(
+        (x, y) => {
+            setTimeout(() => update(x), delay);
+        }
+    );
 });
 
-const mouseY = (delay=0) => untilBLoop(0, update => e => {
-    const y = e.clientY - e.target.offsetTop;
+const mouseY = (delay=0) => untilBLoop(0, update => (x, y) => {
     setTimeout(() => update(y), delay);
 });
 
