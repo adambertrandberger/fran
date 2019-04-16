@@ -30,6 +30,14 @@ class Behavior {
     }
 }
 
+class ConstantBehavior {
+    // a behavior that doesn't use time
+    // how do we make sure it doesn't use external events though? TODO
+    value(time) {
+        return this.f();
+    }
+}
+
 /*
  * BehaviorCombinator is a helper for combining behaviors and allows for taking in additional
  * parameters via its constructor via the "arity" parameter.
@@ -107,7 +115,7 @@ const BehaviorCombinator = (() => {
     };
 })();
 
-function makeBehaviorFunctions() {
+function makeBehaviorFunctions(fran) {
     const exports = {},
           privates = {};
     
@@ -163,36 +171,62 @@ function makeBehaviorFunctions() {
 
     bc2('Cond', (v1, a1, a2) => v1 ? a1 : a2);
     
+    class Later extends BehaviorCombinator(1) {
+        // Should restrict to non-external
+        transform(time) {
+            return time - this.a1;
+        }
+    }
+
+    class UntilB extends Behavior {
+        constructor(b, target, type, listener, once=false) {
+            let retentionDuration = 0,
+                frozenVal = b,
+                called = false;
+
+            super(t => {
+                const cache = fran.externalEventCache[type];
+                cache.ensureRetentionDuration(fran.time - t); // TODO: theres probably a more efficient way
+                // if redentionDuration is negative, it means we are trying to look into the future, should throw exception
+                if (cache.size() > 0) {
+                    const objAndEvent = cache.nearest(t);
+                    if (objAndEvent === null) {
+                        return frozenVal;
+                    }
+
+                    if (called && once) {
+                        return frozenVal;
+                    }
+
+                    frozenVal = listener.bind(objAndEvent[0])(objAndEvent[1]);
+                    called = true;
+                    return frozenVal;
+                }
+                return frozenVal;
+
+            });
+            
+            fran.registerExternalEventListener(target, type);
+        }
+    }
+
+    class Transform extends BehaviorCombinator(1) {
+        value(time) {
+            return this.a1(this.v1);
+        }
+    }
+
+    Object.assign(exports, {
+        // add "mean" and "integral" here basing off previous values 
+        at: (b, t) => lift(b).at(t),
+        later: (b, ms) => new Later(b, ms),
+        time: () => new Behavior(t => t),
+        transform: (b, f) => new Transform(b, f),
+        until: (b, target, type, listener, once=false) => new UntilB(b, target, type, listener, once),
+        neg: exports.comp
+    });
+
     return exports;
-}
-
-class Later extends BehaviorCombinator(1) {
-    // Should restrict to non-external
-    transform(time) {
-        return time - this.a1;
-    }
-}
-
-class UntilB extends Behavior {
-    constructor(b, af) {
-        let val = b;
-        super(t => val);
-        
-        this.af = af;
-        this.a = af(newVal => val = newVal);
-        
-        this.p = this.a.run();
-    }
-    
-    destroy() {
-        this.p.cancel();
-    }
-}
-
-class Transform extends BehaviorCombinator(1) {
-    value(time) {
-        return this.a1(this.v1);
-    }
 }
 
 function lift(term) {
@@ -204,16 +238,3 @@ function lift(term) {
     }
     return new Behavior(term);
 }
-
-const exports = makeBehaviorFunctions();
-
-Object.assign(exports, {
-    at: (b, t) => lift(b).at(t),
-    later: (b, ms) => new Later(b, ms),
-    time: () => new Behavior(t => t),
-    transform: (b, f) => new Transform(b, f),
-    until: (b, a) => new UntilB(b, a),
-    neg: exports.comp
-});
-
-Object.assign(window, exports); // should remove when i want to make es module
