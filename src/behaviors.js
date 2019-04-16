@@ -1,13 +1,3 @@
-
-/* Ideas:
- * We may not have to create a new object for the "behavior" callbacks
- * If we just overwrite this.bs correctly, it may work
- * 
- * TODO:
- * - Make events work via callbacks
- * 
- */
-
 class Behavior {
     constructor(f) {
         this.f = f;
@@ -40,6 +30,14 @@ class Behavior {
     }
 }
 
+class ConstantBehavior {
+    // a behavior that doesn't use time
+    // how do we make sure it doesn't use external events though? TODO
+    value(time) {
+        return this.f();
+    }
+}
+
 /*
  * BehaviorCombinator is a helper for combining behaviors and allows for taking in additional
  * parameters via its constructor via the "arity" parameter.
@@ -56,215 +54,179 @@ class Behavior {
  * then it would have taken another position in the constructor for a constant (at the end), and that argument could be accessed with
  * "this.a2".
  */
-const cache = {};
-function BehaviorCombinator(arity=0) {
-    if (cache[arity]) {
-        return cache[arity];
-    }
+const BehaviorCombinator = (() => {
+    const cache = {};
+    return (arity=0) => {
+        if (cache[arity]) {
+            return cache[arity];
+        }
 
-    return cache[arity] = class extends Behavior {
-        constructor(...args) {
-            super();
-            
-            const as = args.splice(args.length - arity);
-            this.as = as;
-            for (let i=0; i<this.as.length; ++i) {
-                this['a' + (i+1)] = this.as[i];
+        return cache[arity] = class extends Behavior {
+            constructor(...args) {
+                super();
+                
+                const as = args.splice(args.length - arity);
+                this.as = as;
+                for (let i=0; i<this.as.length; ++i) {
+                    this['a' + (i+1)] = this.as[i];
+                }
+                
+                this.bs = args.map(lift);
+                this.vs = [];
+            }
+
+            behavior(time) {
+                return new this.constructor(...this.bs.concat(this.as));
+            }
+
+            destroy() {
+                for (const b of this.bs) {
+                    if (typeof b.destroy === 'function') {
+                        b.destroy();
+                    }
+                }
+            }
+
+            value(time) {
+                if (this.vs.length === 1) {
+                    return this.v1;
+                }
+                return this.vs;
             }
             
-            this.bs = args.map(lift);
-        }
+            at(time) {
+                time = this.transform(time);
 
-        behavior(time) {
-            return new this.constructor(...this.bs.concat(this.as));
-        }
+                this.vs = [];
+                for (let i=0; i<this.bs.length; ++i) {
+                    const reltime = this.bs[i].transform(time);
+                    this.bs[i] = this.bs[i].switch(reltime);
+                    const other = this.bs[i].at(reltime);
+                    this['v' + (i+1)] = other[0];
+                    this['b' + (i+1)] = this.bs[i] = other[1];
 
-        value(time) {
-            if (this.vs.length === 1) {
-                return this.v1;
+                    this.vs.push(other[0]);
+                }
+                
+                const b = this.switch(time); // should this be done earlier?
+                return [b.value(time), b.behavior(time)];
             }
-            return this.vs;
-        }
-        
-        at(time) {
-            time = this.transform(time);
-
-            this.vs = [];
-            for (let i=0; i<this.bs.length; ++i) {
-                const other = this.bs[i].switch(time).at(time);
-                this['v' + (i+1)] = other[0];
-                this['b' + (i+1)] = this.bs[i] = other[1];
-
-                this.vs.push(other[0]);
-            }
-            
-            const b = this.switch(time); // should this be done earlier?
-            return [b.value(time), b.behavior(time)];
-        }
+        };
     };
-}
+})();
 
-const p = {};
-const exports = {};
-function createBCFunctions(n=10) {
-    for (let i=0; i<n; ++i) {
-        p['bc' + i] = function (name, valueFunction) {
-            p[name] = class extends BehaviorCombinator(i) {
+function makeBehaviorFunctions(fran) {
+    const exports = {},
+          privates = {};
+    
+    const numberOfBcFunctions = 10;
+    for (let i=0; i<numberOfBcFunctions; ++i) {
+        privates['bc' + i] = function (name, valueFunction) {
+            exports[name] = class extends BehaviorCombinator(i) {
                 value(time) {
                     return valueFunction(...this.vs.concat(this.as));
                 }
             };
 
-            exports[name.toLowerCase()] = (...args) => new p[name](...args.map(lift));
+            exports[name.toLowerCase()] = (...args) => new window[name](...args);
         };
     }
-    p.bc = p.bc0; // alias
-}
-createBCFunctions();
+    privates.bc = window.bc0; // alias
 
-p.bc0('AddV', (v1, v2) => v1.add(v2));
-p.bc0('SubV', (v1, v2) => v1.sub(v2));
-p.bc0('MulV', (v1, v2) => v1.mul(v2));
-p.bc0('DivV', (v1, v2) => v1.div(v2));
+    // for below:
+    // v1, v2, ..., vn are values which have been created from a nested behavior
+    // a1, a2, ..., an are constants that were given thru the constructor
+    const { bc0, bc1, bc2 } = privates;
+    bc0('AddV', (v1, v2) => v1.add(v2));
+    bc0('SubV', (v1, v2) => v1.sub(v2));
+    bc0('MulV', (v1, v2) => v1.mul(v2));
+    bc0('DivV', (v1, v2) => v1.div(v2));
 
-p.bc0('AddB', (v1, v2) => v1 + v2);
-p.bc0('SubB', (v1, v2) => v1 - v2);
-p.bc0('MulB', (v1, v2) => v1 * v2);
-p.bc0('DivB', (v1, v2) => v1 / v2);
+    bc0('AddB', (v1, v2) => v1 + v2);
+    bc0('SubB', (v1, v2) => v1 - v2);
+    bc0('MulB', (v1, v2) => v1 * v2);
+    bc0('DivB', (v1, v2) => v1 / v2);
 
-p.bc0('Sin', v1 => Math.sin(v1));
-p.bc0('Cos', v1 => Math.cos(v1));
+    bc0('Sin', v1 => Math.sin(v1));
+    bc0('Cos', v1 => Math.cos(v1));
 
-p.bc0('Abs', v1 => Math.abs(v1));
-p.bc0('Comp', v1 => -this.v1);
+    bc0('Abs', v1 => Math.abs(v1));
+    bc0('Comp', v1 => -this.v1);
 
-p.bc0('Squared', v1 => v1*v1);
-p.bc0('Cubed', v1 => v1*v1*v1);
+    bc0('Squared', v1 => v1*v1);
+    bc0('Cubed', v1 => v1*v1*v1);
 
-p.bc0('Mod', (v1, a1) => v1 % a1);
+    bc0('Mod', (v1, a1) => v1 % a1);
 
-p.bc1('GT', (v1, a1) => v1 > a1);
-p.bc1('LT', (v1, a1) => v1 < a1);
-p.bc1('GTE', (v1, a1) => v1 >= a1);
-p.bc1('LTE', (v1, a1) => v1 <= a1);
-p.bc1('Eq', (v1, a1) => v1 == a1);
+    bc1('GT', (v1, a1) => v1 > a1);
+    bc1('LT', (v1, a1) => v1 < a1);
+    bc1('GTE', (v1, a1) => v1 >= a1);
+    bc1('LTE', (v1, a1) => v1 <= a1);
+    bc1('Eq', (v1, a1) => v1 == a1);
 
-p.bc1('Add', (v1, a1) => v1 + a1);
-p.bc1('Sub', (v1, a1) => v1 - a1);
-p.bc1('Mul', (v1, a1) => v1 * a1);
-p.bc1('Div', (v1, a1) => v1 / a1);
+    bc1('Add', (v1, a1) => v1 + a1);
+    bc1('Sub', (v1, a1) => v1 - a1);
+    bc1('Mul', (v1, a1) => v1 * a1);
+    bc1('Div', (v1, a1) => v1 / a1);
 
-p.bc2('Cond', (v1, a1, a2) => v1 ? a1 : a2);
-
-class Later extends BehaviorCombinator(1) {
-    transform(time) {
-        return time - this.a1;
-    }
-}
-
-class UntilB extends BehaviorCombinator(1) {
-    switch(time) {
-        const occ = this.a1.occ();
-
-        if (occ[1] != null) {
-            return occ[1];
-        } else {
-            return this;
+    bc2('Cond', (v1, a1, a2) => v1 ? a1 : a2);
+    
+    class Later extends BehaviorCombinator(1) {
+        // Should restrict to non-external
+        transform(time) {
+            return time - this.a1;
         }
     }
-}
 
-class Transform extends BehaviorCombinator(1) {
-    value(time) {
-        return this.a1(this.v1);
-    }
-}
+    class UntilB extends Behavior {
+        constructor(b, target, type, listener, once=false) {
+            let retentionDuration = 0,
+                frozenVal = b,
+                called = false;
 
-class Mouse extends Behavior {
-    constructor() {
-        super();
-        this.pos = new Vector(0, 0);
-    }
-    
-    value(time) {
-        const mouseAtStep = currentMouse;
-        const delay = g.loopTime-time;
+            super(t => {
+                const cache = fran.externalEventCache[type];
+                cache.ensureRetentionDuration(fran.time - t); // TODO: theres probably a more efficient way
+                // if redentionDuration is negative, it means we are trying to look into the future, should throw exception
+                if (cache.size() > 0) {
+                    const objAndEvent = cache.nearest(t);
+                    if (objAndEvent === null) {
+                        return frozenVal;
+                    }
 
-        timeout(() => {
-            this.pos = mouseAtStep;
-        }, delay);
+                    if (called && once) {
+                        return frozenVal;
+                    }
 
-        return this.pos;
-    }
-}
+                    frozenVal = listener.bind(objAndEvent[0])(objAndEvent[1]);
+                    called = true;
+                    return frozenVal;
+                }
+                return frozenVal;
 
-class MouseX extends Mouse {
-    value(time) {
-        return super.value(time).x;
-    }
-}
-
-class MouseY extends Mouse {
-    value(time) {
-        return super.value(time).y;
-    }
-}
-
-// could be improved
-class AccelMouse extends Behavior {
-    constructor(scalar) {
-        super();
-        
-        const topSpeed = 5;        
-        let position = new Vector();
-        let velocity = new Vector();
-        
-        this.b = transform(mouse(), i => {
-            const mouse = new Vector(i.x, i.y);
-            let desired = mouse.sub(position);
-
-            const d = desired.mag();
-            desired = desired.inorm();
-
-            let acceleration = desired.mul(scalar);
-
-            velocity = velocity.add(acceleration).limit(topSpeed);
-            position = position.add(velocity);
-
-            return position;
-        });
-    }
-
-    value(time) {
-        return this.b.at(time)[0];
-    }
-}
-
-// should be removed and replaced with events
-class GoToMouse extends Behavior {
-    constructor(scalar) {
-        super();
-        const topSpeed = 1;
-        
-        let position = new Vector();
-        let velocity = new Vector();
-        
-        this.b = transform(mouse(), i => {
-            let mouse = new Vector(i.x, i.y);
-            let direction = mouse.isub(position).inorm();
-
-            const acceleration = direction.mul(scalar);
-
-            velocity = velocity.add(acceleration).limit(topSpeed);
-            position = position.add(velocity);
+            });
             
-            return position;
-        });
+            fran.registerExternalEventListener(target, type);
+        }
     }
 
-    value(time) {
-        return this.b.at(time)[0];
+    class Transform extends BehaviorCombinator(1) {
+        value(time) {
+            return this.a1(this.v1);
+        }
     }
+
+    Object.assign(exports, {
+        // add "mean" and "integral" here basing off previous values 
+        at: (b, t) => lift(b).at(t),
+        later: (b, ms) => new Later(b, ms),
+        time: () => new Behavior(t => t),
+        transform: (b, f) => new Transform(b, f),
+        until: (b, target, type, listener, once=false) => new UntilB(b, target, type, listener, once),
+        neg: exports.comp
+    });
+
+    return exports;
 }
 
 function lift(term) {
@@ -276,22 +238,3 @@ function lift(term) {
     }
     return new Behavior(term);
 }
-
-Object.assign(exports, {
-    lift,
-    at: (b, t) => lift(b).at(t),
-    later: (b, ms) => new Later(b, ms),
-    time: () => new Behavior(t => t),
-    transform: (b, f) => new Transform(b, f),
-    mouseX: () => new MouseX(),
-    mouseY: () => new MouseY(),
-    mouse: () => new Mouse(),
-    accelMouseX: a => new AccelMouseX(a),
-    accelMouseY: a => new AccelMouseY(a),
-    accelMouse: a => new AccelMouse(a),
-    goToMouse: a => new GoToMouse(a),
-    untilB: (b, e) => new UntilB(b, e),
-    neg: p.comp // alias
-});
-
-export default exports;

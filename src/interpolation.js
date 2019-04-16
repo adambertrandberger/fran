@@ -1,16 +1,16 @@
-const linear = function (t) { return t; };
-const inQuad = function (t) { return t*t; };
-const outQuad = function (t) { return t*(2-t); };
-const inOutQuad = function (t) { return t<.5 ? 2*t*t : -1+(4-2*t)*t; };
-const inCubic = function (t) { return t*t*t; };
-const outCubic = function (t) { return (--t)*t*t+1; };
-const inOutCubic = function (t) { return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1; };
-const inQuart = function (t) { return t*t*t*t; };
-const outQuart = function (t) { return 1-(--t)*t*t*t; };
-const inOutQuart = function (t) { return t<.5 ? 8*t*t*t*t : 1-8*(--t)*t*t*t; };
-const inQuint = function (t) { return t*t*t*t*t; };
-const outQuint = function (t) { return 1+(--t)*t*t*t*t; };
-const inOutQuint = function (t) { return t<.5 ? 16*t*t*t*t*t : 1+16*(--t)*t*t*t*t; };
-const inElastic = function (t) { return (0.04 -0.04/t)*Math.sin(25*t)+1; };
-const outElastic = function (t) { return 0.04*t/(--t)* Math.sin(25*t); };
-const inOutElastic = function (t) { return (t -= 0.5) < 0 ? (0.02+0.01/t)*Math.sin(50*t) : (.02-0.01/t)*Math.sin(50*t)+1; };
+const linear = t => t,
+      inQuad = t => t*t,
+      outQuad = t =>  t*(2-t),
+      inOutQuad = t => t<.5 ? 2*t*t : -1+(4-2*t)*t,
+      inCubic = t => t*t*t,
+      outCubic = t => (--t)*t*t+1,
+      inOutCubic = t => t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1,
+      inQuart = t => t*t*t*t,
+      outQuart = t => 1-(--t)*t*t*t,
+      inOutQuart = t => t<.5 ? 8*t*t*t*t : 1-8*(--t)*t*t*t,
+      inQuint = t => t*t*t*t*t,
+      outQuint = t => 1+(--t)*t*t*t*t,
+      inOutQuint = t => t<.5 ? 16*t*t*t*t*t : 1+16*(--t)*t*t*t*t,
+      inElastic = t => (0.04 -0.04/t)*Math.sin(25*t)+1,
+      outElastic = t =>  0.04*t/(--t)* Math.sin(25*t),
+      inOutElastic = t => (t -= 0.5) < 0 ? (0.02+0.01/t)*Math.sin(50*t) : (.02-0.01/t)*Math.sin(50*t)+1;

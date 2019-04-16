@@ -35,14 +35,6 @@ class Interval extends Delay {
     }
 }
 
-function timeout(f, i) {
-    return timer.add(new Timeout(f, i));
-}
-
-function interval(f, i) {
-    return timer.add(new Interval(f, i));
-}
-
 class Timer {
     constructor() {
         this.timers = {};
@@ -78,10 +70,17 @@ class Timer {
         this.checkedAt = new Date();
     }
 
+    timeout(f, i) {
+        return this.add(new Timeout(f, i));
+    }
+
+    interval(f, i) {
+        return this.add(new Interval(f, i));
+    }
+    
     add(timer) {
         const id = this.tid++;
         timer.id = id;
         return this.timers[id] = timer;
     }
 }
-const timer = new Timer();

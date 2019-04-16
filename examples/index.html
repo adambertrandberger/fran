@@ -165,15 +165,29 @@ Click on a button to run and show code
         </style>
 
         <!-- Put all scripts at bottom of body to ensure DOM elements are initialized before scripts -->
+        <!-- Generic libraries that have no dependencies -->
         <script src="vector.js"></script>
-        <script src="timer.js"></script>        
+        <script src="interpolation.js"></script>
+        <script src="timer.js"></script>                
+        
         <script src="behaviors.js"></script>
-        <script src="events.js"></script>                
-        <script src="image.js"></script>                                
-        <script src="init.js"></script>                        
-        <script src="loop.js"></script>
-        <script src="interpolation.js"></script>        
-        <script src="start.js"></script>
+        <script src="loop.js"></script>        
+        <script src="main.js"></script>                
+
+        <script>
+         const canvas = document.querySelector('canvas'),
+               ctx = canvas.getContext('2d');
+
+         const fran = new Fran();
+         fran.runAnimation(() => {
+             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+             window.image.render(ctx);
+         });             
+        </script>
+
+        <!-- Library user code: -->
+        <script src="image.js"></script>                                        
         <script src="tutorial.js"></script>
+        
     </body>
 </html>
