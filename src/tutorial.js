@@ -9,28 +9,39 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
-const arrowCtr = ab => Arrow.fix(a => Arrow.seq([
+const mouse = new Event(update => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
-    ab,
-    a
-]));
+    (e => {
+        const x = e.clientX - e.target.offsetLeft,
+              y = e.clientY - e.target.offsetTop;
 
-const mouseX = delay => later(until(200, canvas, 'mousemove', function (e) {
-    return e.clientX - e.target.offsetLeft;
-}), delay);
+        update(new Vector(x, y));
+    }).lift(),
+    a
+])));
+
+const mouseX = new Event(update => Arrow.fix(a => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    (e => {
+        update(e.clientX - e.target.offsetLeft);
+    }).lift(),
+    a
+])));
 
 const mouseY = delay => later(until(200, canvas, 'mousemove', function (e) {
     return e.clientY - e.target.offsetTop;
 }), delay);
 
-const mouse = delay => later(until(new Vector(0, 0), canvas, 'mousemove', function (e) {
-    const x = e.clientX - e.target.offsetLeft,
-          y = e.clientY - e.target.offsetTop;
+/*
+  const mouse = delay => later(until(new Vector(0, 0), canvas, 'mousemove', function (e) {
+  const x = e.clientX - e.target.offsetLeft,
+  y = e.clientY - e.target.offsetTop;
 
-    return new Vector(x, y);
-}), delay/10);
-
+  return new Vector(x, y);
+  }), delay/10);
+*/
 
 /*
   const mouse = (delay=0) => until(new Vector(0, 0), update => arrowCtr(
