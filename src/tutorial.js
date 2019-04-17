@@ -9,7 +9,14 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
-const mouse = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
+// must register the types for usage with integral
+fran.defineApplicative(Vector, {
+    pure: v => new Vector(v, v),
+    fmap: (f, v) => new Vector(f(v.x), f(v.y)),
+    apply: (vf, v) => new Vector(vf.x(v.x), vf.y(v.y)),
+});
+
+const mouse = fran.createExternalEvent(update => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     (e => {
@@ -21,56 +28,185 @@ const mouse = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
     a
 ])));
 
-const mouseX = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
+const mouseX = fran.createExternalEvent(update => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     (e => {
         const x = e.clientX - e.target.offsetLeft;
+
         update(x);
     }).lift(),
     a
 ])));
 
-const mouseY = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
+const mouseY = fran.createExternalEvent(update => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     (e => {
         const y = e.clientY - e.target.offsetTop;
+
         update(y);
     }).lift(),
     a
 ])));
 
-const cycleRainbow = (b1, max) => transform(b1, t => {
-    const length = t;
-    const maxLength = max;
-    
-    const i = (length * 255 / maxLength);
-    const r = Math.round(Math.sin(0.024 * i + 0) * 127 + 128);
-    const g = Math.round(Math.sin(0.024 * i + 2) * 127 + 128);
-    const b = Math.round(Math.sin(0.024 * i + 4) * 127 + 128);
-    
-    const colorString = 'rgb(' + r + ',' + g + ',' + b + ')';
-
-    return colorString;
-});
 
 const buttons = {
-    // questions: we should be caching certain amounts of events
-    // how to add delay to untilb
-    asdf: () => {
-        const ball = new Ball();
-        ball.y  = 100;
-        ball.x = later(until(200, mouseX), 1000);
-        // or we could do:
-        // ball.x = later(until(200, mouse, v => v.x), 1000);
-        return ball;
+
+    "Clock2": () => {
+        let buffer = [];
+        for (let i=0; i<30; ++i) {
+            buffer[i] = new Vector();
+        }
+        const speed = 0.15;
+
+        const b = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
+            return untilInternalEvent(t => buffer[0], pos => {
+                // TODO: this is definitely a hack because I'm not using this
+                // as an internal event, i'm using it for its side effect
+                // however, it is more efficient than most things in fran
+                if (pos !== null) {
+                    buffer[0].iadd(mouseV.sub(buffer[0]).mul(speed));
+                    for (let i=1; i<30; ++i) {
+                        buffer[i].iadd(buffer[i-1].sub(buffer[i]).mul(speed));
+                    }
+                }
+            });
+        });
+
+        let nums = [];
+        // clock face - hours
+        let delay = 0;
+        for (let i=12; i>0; --i) {
+            const p = i/12;
+            const whole = Math.PI*2;
+            const part = (p*whole)-Math.PI/2;
+            const img = new Text({
+                text: +i,
+            });
+
+            const radius = 50;
+            
+            let b1 = b; // we just need to use this once -- we should remove this though
+            if (i !== 1) {
+                // TODO: this is a hack that allows for the buffer update to happen
+                b1 = t => buffer[i];
+            }
+            
+            img.pos = addv(b1, lift(new Vector(Math.cos(part)*50, Math.sin(part)*50)));
+            nums.unshift(img);
+        }
+        
+        // clock face - date
+        const date = new Date();
+        const days = [
+            'SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'
+        ];
+        const months = [
+            'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+        ];
+        const dayOfWeek = days[date.getDay()];
+        const dayOfMonth = date.getDate();
+        const year = date.getYear() + 1900;        
+        const month = months[date.getMonth()];
+        let todaysDate =  ' ' + dayOfWeek + ' ' + dayOfMonth + ' ' + month + ' ' + year + ' ';
+
+        for (let i=0; i<todaysDate.length; ++i) {
+            const p = i/(todaysDate.length-1);
+            const whole = -Math.PI*2;
+            const part = p*whole;
+            const img = new Text({
+                text: todaysDate[i],
+            });
+            const radius = 70;
+
+            let x = mul(sin(add(div(time(), 2000), part)), radius);
+            let y = mul(cos(add(div(time(), 2000), part)), radius);
+            
+            img.x = addb(x, lift(t => buffer[i].x));
+            img.y = addb(y, lift(t => buffer[i].y));
+            
+            nums.unshift(img);
+        }
+
+        // seconds hand
+        delay = 0;
+        let radius = 0;
+        for (let i=5; i>0; --i) {
+            const img = new Text({
+                text: 'o',
+            });
+
+            const rad = transform(time(), t => {
+                const seconds = new Date().getSeconds();
+                const fraction = seconds/60;
+                return (fraction * (-Math.PI*2)) + Math.PI;
+            });
+            
+            const x = mul(sin(rad), radius);
+            const y = mul(cos(rad), radius);
+
+            img.x = addb(t => buffer[i].x, x);
+            img.y = addb(t => buffer[i].y, y);
+            nums.unshift(img);
+            radius += 10;
+        }
+
+        // minutes hand
+        delay = 0;
+        radius = 0;
+        for (let i=4; i>0; --i) {
+            const img = new Text({
+                text: 'o',
+            });
+
+            const rad = transform(time(), t => {
+                const minutes = new Date().getMinutes();
+                const fraction = minutes/60;
+                return (fraction * (-Math.PI*2)) + Math.PI;
+            });
+            
+            const x = mul(sin(rad), radius);
+            const y = mul(cos(rad), radius);
+
+            img.x = addb(t => buffer[i].x, x);
+            img.y = addb(t => buffer[i].y, y);
+            nums.unshift(img);
+            radius += 10;
+        }
+
+        // hours hand
+        delay = 0;
+        radius = 0;
+        for (let i=3; i>0; --i) {
+            const img = new Text({
+                text: 'o',
+            });
+
+            const rad = transform(time(), t => {
+                const minutes = new Date().getMinutes();
+                const hours = new Date().getHours();                
+                const fraction = ((hours*60)+minutes)/(60*12);
+                return (fraction * (-Math.PI*2)) + Math.PI;
+            });
+            
+            const x = mul(sin(rad), radius);
+            const y = mul(cos(rad), radius);
+
+            //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
+            
+            img.x = addb(t => buffer[i].x, x)
+            img.y = addb(t => buffer[i].y, y);
+            nums.unshift(img);
+            radius += 10;
+        }
+
+        return over(...nums);
     },
-    
+
     clock: () => {
         const delayStep = 50;
         let nums = [];
-
         
         // clock face - hours
         let delay = 0;
@@ -83,7 +219,7 @@ const buttons = {
             });
 
             const radius = 50;
-            move(addv(later(until(new Vector(0, 0), mouse), delay), lift(new Vector(Math.cos(part)*50, Math.sin(part)*50))), img);
+            move(addv(later(untilExternalEvent(new Vector(0, 0), mouse), delay), lift(new Vector(Math.cos(part)*50, Math.sin(part)*50))), img);
             //            setTimeout(() => deregisterB(img, 'x'), 5000);  // TODO to show how to freeze a behavior
             nums.unshift(img);
             delay += delayStep;
@@ -120,8 +256,7 @@ const buttons = {
             
             const wiggle = mul(sin(div(time(), 100)), 100);
             const waggle = mul(cos(div(time(), 100)), 100);
-
-            moveXY(addb(x, later(until(0, mouseX), delay)), addb(y, later(until(0, mouseY), delay)), img);
+            moveXY(addb(x, later(untilExternalEvent(0, mouseX), delay)), addb(y, later(untilExternalEvent(0, mouseY), delay)), img);
             nums.unshift(img);
             delay += delayStep;
         }
@@ -143,7 +278,7 @@ const buttons = {
             const x = mul(sin(rad), radius);
             const y = mul(cos(rad), radius);
 
-            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
+            moveXY(addb(later(untilExternalEvent(0, mouseX), delay), x), addb(later(untilExternalEvent(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -168,7 +303,7 @@ const buttons = {
 
             //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
+            moveXY(addb(later(untilExternalEvent(0, mouseX), delay), x), addb(later(untilExternalEvent(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -194,7 +329,7 @@ const buttons = {
 
             //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
+            moveXY(addb(later(untilExternalEvent(0, mouseX), delay), x), addb(later(untilExternalEvent(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -202,6 +337,198 @@ const buttons = {
 
         return over(...nums);
     },
+
+
+    "Snake Clock": () => {
+        let buffer = [];
+        for (let i=0; i<30; ++i) {
+            buffer[i] = new Vector();
+        }
+        const speed = 0.09;
+
+        const b = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
+            return untilInternalEvent(t => buffer[0], pos => {
+                // TODO: this is definitely a hack because I'm not using this
+                // as an internal event, i'm using it for its side effect
+                // however, it is more efficient than most things in fran
+                if (pos !== null) {
+                    buffer[0].iadd(mouseV.sub(buffer[0]).mul(speed));
+                    for (let i=1; i<30; ++i) {
+                        buffer[i].iadd(buffer[i-1].sub(buffer[i]).mul(speed));
+                    }
+                }
+            });
+        });
+
+        const balls = [ new Ball() ];
+        balls[0].pos = b;
+        for (let i=1; i<30; ++i) {
+            const ball = new Ball();
+            ball.pos = t => {
+                return buffer[i];
+            };
+            balls.unshift(ball);
+        }
+        
+        return over(...balls);
+    },
+
+    /*
+      moveToMouseAndSlowDown: () => {
+      // when we say ball.x = integral(1) it is saying ball.x = integral of the velocity 1
+      // when we say ball.x = integral(integral(1)) it is saying ball.x = integral of the integral of acceleration 1
+      const ball = new Ball();
+
+      const vel = stateIntegral(new Vector(0, 0), Vector);
+      const pos = stateIntegral(vel, Vector);
+
+      ball.pos = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
+      return untilInternalEvent(pos, pos => {
+      // TODO: this is definitely a hack because I'm not using this
+      // as an internal event, i'm using it for its side effect
+      // however, it is more efficient than most things in fran
+      if (pos !== null) {
+      //                    console.log(prevPos);
+      let d = mouseV.sub(pos);
+      const a = d.mul(0.6);
+      vel.update(a);
+      }
+      });
+
+      /* Terminal velocity:
+      return untilInternalEvent(pos, pos => {
+      if (vel) {
+      vel.integral = vel.get().limitMax(0.01);
+      console.log(vel.integral);
+      }
+      });
+    */
+
+
+    // TODO: Problems
+    // - need to make prevPos invisible -- don't want the user to have to worry
+    // - nesting doesn't seem to work with integral of integral of vector
+    // - what if i want access to the integrated value in here? i.e. implementing terminal velocity
+    /*            
+      return untilInternalEvent(pos, pos => {
+      if (pos && mouseV.sub(pos).mag() < 50) {
+      return pos;
+      }
+      });
+
+    */
+
+
+    followMouse: () => {
+        // when we say ball.x = integral(1) it is saying ball.x = integral of the velocity 1
+        // when we say ball.x = integral(integral(1)) it is saying ball.x = integral of the integral of acceleration 1
+        const ball = new Ball();
+
+        const vel = stateIntegral(new Vector(0, 0), Vector);
+        const pos = stateIntegral(vel, Vector);
+
+        ball.pos = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
+            return untilInternalEvent(pos, pos => {
+                // TODO: this is definitely a hack because I'm not using this
+                // as an internal event, i'm using it for its side effect
+                // however, it is more efficient than most things in fran
+                if (pos !== null) {
+                    //                    console.log(prevPos);
+                    let d = mouseV.sub(pos);
+                    d.inorm();
+                    const a = d.mul(0.001);
+                    vel.update(a);
+                }
+            });
+
+            /* Terminal velocity:
+              return untilInternalEvent(pos, pos => {
+              if (vel) {
+              vel.integral = vel.get().limitMax(0.01);
+              console.log(vel.integral);
+              }
+              });
+            */
+
+
+            // TODO: Problems
+            // - need to make prevPos invisible -- don't want the user to have to worry
+            // - nesting doesn't seem to work with integral of integral of vector
+            // - what if i want access to the integrated value in here? i.e. implementing terminal velocity
+            /*            
+              return untilInternalEvent(pos, pos => {
+              if (pos && mouseV.sub(pos).mag() < 50) {
+              return pos;
+              }
+              });
+
+            */
+        });
+
+
+        return ball;
+    },
+
+    followMouseAccelX: () => {
+        // when we say ball.x = integral(1) it is saying ball.x = integral of the velocity 1
+        // when we say ball.x = integral(integral(1)) it is saying ball.x = integral of the integral of acceleration 1
+        const ball = new Ball();
+
+        ball.x = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
+            // TODO: Problems
+            //    - need to make prevPos invisible -- don't want the user to have to worry
+            // - nesting doesn't work because we need to propagate the prev position of both velocity and acceleration, not just one of them
+            return untilInternalEvent(integral(integral(0.0001), window.number, prevPos), pos => {
+                if (pos && mouseV.x - pos < 50) {
+                    return pos;
+                }
+            });
+        });
+        return ball;
+    },
+
+
+    internalEvent: () => {
+        const ball = new Ball();
+        ball.pos = untilInternalEvent(new Vector(0, 0), prev => {
+            if (fran.time > 1000) {
+                return new Vector(100, 100);
+            }
+            // TODO: prev isn't great, it is always null the first time
+            // Also, should allow for explicitly saying "return old behavior"
+
+            // TODO: Need untilB switching
+        });
+        return ball;
+    },
+
+    vectorIntegralOfIntegral: () => {
+        const ball = new Ball();
+        ball.pos = integral(integral(new Vector(0.0001, 0.0001), Vector), Vector);
+        return ball;
+    },
+
+    numericalIntegralOfIntegral: () => {
+        const ball = new Ball();
+        
+        ball.x = integral(integral(0.001));
+        ball.y = 100;
+        
+        return ball;
+    },
+    
+    
+    // questions: we should be caching certain amounts of events
+    // how to add delay to untilExternalEventb
+    asdf: () => {
+        const ball = new Ball();
+        ball.y  = 100;
+        ball.x = later(untilExternalEvent(200, mouseX), 1000);
+        // or we could do:
+        // ball.x = later(untilExternalEvent(200, mouse, v => v.x), 1000);
+        return ball;
+    },
+    
 
     text: () => {
         const text = new Text({
@@ -213,13 +540,13 @@ const buttons = {
     },
     
     followMouseArrowsUBL: () => {
-        return moveXY(addb(30, until(0, update => Arrow.seq([
+        return moveXY(addb(30, untilExternalEvent(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ]))), until(0, update => Arrow.seq([
+        ]))), untilExternalEvent(0, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
@@ -229,13 +556,13 @@ const buttons = {
     },
     
     arrowsUBL: () => {
-        return moveXY(until(10, update => Arrow.seq([
+        return moveXY(untilExternalEvent(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ])), until(10, update => Arrow.seq([
+        ])), untilExternalEvent(10, update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
@@ -245,13 +572,13 @@ const buttons = {
     },
 
     followMouseArrows: () => {
-        return moveXY(addb(30, until(0, event(update => Arrow.seq([
+        return moveXY(addb(30, untilExternalEvent(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ])))), until(0, event(update => Arrow.seq([
+        ])))), untilExternalEvent(0, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('mousemove'),
             new LiftedArrow(e => {
@@ -261,13 +588,13 @@ const buttons = {
     },
     
     arrows: () => {
-        return moveXY(until(10, event(update => Arrow.seq([
+        return moveXY(untilExternalEvent(10, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
                 update(e.clientX - e.target.offsetLeft);
             })
-        ]))), until(10, event(update => Arrow.seq([
+        ]))), untilExternalEvent(10, event(update => Arrow.seq([
             new ElemArrow('canvas'),
             new EventArrow('click'),
             new LiftedArrow(e => {
@@ -291,18 +618,18 @@ const buttons = {
         const ball = new Ball();
 
         function transition(duration, from, to) {
-            return until(from, predicate(gt(time(), duration)).handle(() => to));
+            return untilExternalEvent(from, predicate(gt(time(), duration)).handle(() => to));
         }
         
         moveXY(100, 100, ball);
         return ball;
     },
     
-    recursiveUntilB: () => {
+    recursiveUntilExternalEventB: () => {
         const ball = new Ball();
         
         function toggle(val, x, y) {
-            return until(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
+            return untilExternalEvent(val ? x : y, lbd().handle((time, lbu) => toggle(!val, x, y)));            
         }
 
         move(toggle(true, new Vector(100, 100), new Vector(200, 100)), ball);
@@ -321,7 +648,7 @@ const buttons = {
 
     leftMouseDown: () => {
         const ball = new Ball();
-        const b = until(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
+        const b = untilExternalEvent(new Vector(50, 50), lbd().handle(() => new Vector(100, 100)));
         move(b, ball);
         return ball;
     },
@@ -329,7 +656,7 @@ const buttons = {
     leftMouseDownThenUp: () => {
         const ball = new Ball();
 
-        const b = until(new Vector(50, 50), lbd().handleVal((lbu) => until(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
+        const b = untilExternalEvent(new Vector(50, 50), lbd().handleVal((lbu) => untilExternalEvent(new Vector(200, 200), lbu.handle(() => new Vector(400, 400)))));
         move(b, ball);
         
         return ball;
@@ -614,3 +941,18 @@ fullscreen.addEventListener('click', () => {
     }
     isFullscreen = !isFullscreen;
 });
+
+const cycleRainbow = (b1, max) => transform(b1, t => {
+    const length = t;
+    const maxLength = max;
+    
+    const i = (length * 255 / maxLength);
+    const r = Math.round(Math.sin(0.024 * i + 0) * 127 + 128);
+    const g = Math.round(Math.sin(0.024 * i + 2) * 127 + 128);
+    const b = Math.round(Math.sin(0.024 * i + 4) * 127 + 128);
+    
+    const colorString = 'rgb(' + r + ',' + g + ',' + b + ')';
+
+    return colorString;
+});
+

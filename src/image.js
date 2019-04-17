@@ -35,15 +35,24 @@ class Ball {
         this.strokeStyle = i.strokeStyle || 'black';
         this.fillStyle = i.fillStyle || 'lightblue';
 
+        // allow using a vector instead of x/y
+        this.pos = i.pos || null;
+
         fran.defineBehavior(this, 'fillStyle');
         fran.defineBehavior(this, 'strokeStyle');
         fran.defineBehavior(this, 'lineWidth');
         fran.defineBehavior(this, 'x');
         fran.defineBehavior(this, 'y');
         fran.defineBehavior(this, 'r');
+        fran.defineBehavior(this, 'pos');
     }
 
     render(ctx) {
+        if (this.pos !== null) {
+            this.x = this.pos.x;
+            this.y = this.pos.y;
+        }
+        
         ctx.save();
         ctx.beginPath();
         ctx.fillStyle = this.fillStyle;
@@ -64,13 +73,22 @@ class Text {
         this.text = i.text || '';
         this.font = '12px Arial'; // not configurable for now
 
+        // allow using a vector instead of x/y
+        this.pos = i.pos || null;
+
         fran.defineBehavior(this, 'font');
         fran.defineBehavior(this, 'x');
         fran.defineBehavior(this, 'y');
         fran.defineBehavior(this, 'text');
+        fran.defineBehavior(this, 'pos');
     }
 
     render(ctx) {
+        if (this.pos !== null) {
+            this.x = this.pos.x;
+            this.y = this.pos.y;
+        }
+
         ctx.save();
         ctx.font = this.font;
         ctx.fillText(this.text, this.x, this.y);        

@@ -77,6 +77,13 @@ class Vector {
         return this;
     }
 
+    iround() {
+        this.x = Math.round(this.x);
+        this.y = Math.round(this.y);
+
+        return this;
+    }
+
     vdiv(other) {
         const x = other.x === 0 ? 0 : this.x/other.x;
         const y = other.y === 0 ? 0 : this.y/other.y;        
@@ -94,17 +101,41 @@ class Vector {
         return this;
     }
 
-    div(scalar) {
-        return new Vector(this.x/scalar, this.y/scalar);
+    div(v) {
+        if (typeof v === 'number') {
+            return new Vector(this.x/v, this.y/v);
+        } else {
+            let x, y = 0;
+            if (v.x === 0) {
+                x = 0;
+            } else {
+                x = this.x / v.x;
+            }
+
+            if (v.y === 0) {
+                y = 0;
+            } else {
+                y = this.y / v.y;
+            }
+            return new Vector(x, y);
+        }
     }
 
-    idiv(scalar) {
-        if (scalar > 0) {
-            this.x /= scalar;
-            this.y /= scalar;
+    idiv(v) {
+
+        // scalar:
+        if (typeof v === 'number') {
+            if (v > 0) {
+                this.x /= v;
+                this.y /= v;
+            } else {
+                this.x = 0;
+                this.y = 0;
+            }
         } else {
-            this.x = 0;
-            this.y = 0;
+            // vector:
+            this.x /= v.x;
+            this.y /= v.y;
         }
 
         return this;

@@ -178,31 +178,199 @@ function makeBehaviorFunctions(fran) {
         }
     }
 
-    class UntilB extends Behavior {
+    class UntilInternalEvent extends Behavior {
+        constructor(b1, pred) {
+
+            super(t => {
+                if (this.b2 !== undefined) {
+                    return this.val = this.b2.f(t);
+                }
+                
+                this.b2 = this.pred(this.val);
+                if (this.b2 !== undefined) {
+                    this.b2 = lift(this.b2);
+                    return this.val = this.b2.f(t);
+                }
+                
+                return this.val = this.b1.f(t);
+            }); // TODO: not correct
+
+            this.val = null; // val represents the last computer value from the internal event
+            this.switched = false;
+            this.b1 = lift(b1);
+            this.b2 = undefined;
+            this.pred = pred;
+        }
+    }
+
+    class UntilExternalEvent extends Behavior {
         constructor(b, event, listener=v=>v) {
+            b = lift(b);
             let retentionDuration = 0,
-                frozenVal = b,
-                called = false;
+                frozenB = b,
+                lastVal = null,
+                lastTime = null;
 
             super(t => {
                 const cache = fran.externalEventCache[event.id];
-                cache.ensureRetentionDuration(fran.time - t); // TODO: theres probably a more efficient way
+                cache.ensureRetentionDuration(fran.time - t); // TODO: we may not have to do this every single time
                 // if redentionDuration is negative, it means we are trying to look into the future, should throw exception
                 if (cache.size() > 0) {
-                    const vals = cache.nearest(t);
-                    if (vals === null) {
-                        return frozenVal;
+                    const nearest = cache.nearest(t);
+                    if (nearest === null) {
+                        return lastVal;
+                    }
+                    
+                    const [time, vals] = nearest;
+                    
+                    // if we have an event from the same time,
+                    // we don't have to run the listener again
+                    if (lastTime !== null && time === lastTime) {
+                        return lastVal = frozenB.at(t)[0];
                     }
 
-                    frozenVal = listener(...vals);
-                    called = true;
-                    return frozenVal;
-                }
-                return frozenVal;
+                    // if there are no events within the scope of time,
+                    // return the last known behavior
+                    if (vals === null) {
+                        return lastVal = frozenB.at(t)[0];                        
+                    }
 
+                    vals.push(lastVal);
+                    frozenB = lift(listener(...vals));
+                    const ret = lastVal = frozenB.at(t)[0];
+                    lastTime = time;
+                    return ret;
+                }
+                
+                return lastVal = b.at(t)[0];
             });
             
             fran.registerExternalEventListener(event);
+        }
+    }
+
+    function getPureFmapAndApplyFunctions(val) {
+        let fmap = null,
+            apply = null,
+            pure = null;
+        
+        if (typeof val.fmap === 'function' && typeof val.apply === 'function' && typeof val.pure === 'function') {
+            fmap = val.fmap.bind(val);
+            apply = val.apply.bind(val);
+            pure = val.apply.bind(val); 
+        } else {
+            if (typeof val !== 'number') {
+                throw new Error('Cannot take integral of "' + val.constructor.name + '" without specifying "fmap", "apply", and "pure" functions.');
+            }
+            
+            fmap = (f, v) => f(v);
+            apply = (vf, v) => vf(v);
+            pure = v => v;
+        }
+        return [pure, fmap, apply];
+    }
+
+    class StateIntegral extends Behavior {
+        constructor(b, type=window.number) {
+
+            
+            const { pure, fmap, apply } = fran.getApplicative(type);
+            
+            super(t => {
+                let val = this.b.at(t)[0];
+                const interval = 20; //t - previousTime;
+                const vf = fmap(v => prev => prev + (v * interval), val);
+                return this.integral = apply(vf, this.integral);
+            });
+
+            this.b = lift(b);
+            this.integral = pure(0);
+        }
+
+        update(b) {
+            this.b = lift(b);
+        }
+
+        get() {
+            return this.integral;
+        }
+    }
+
+    class Integral extends Behavior {
+        // same as RiemannIntegral but uses a cache of the
+        // previously integrated value
+
+        // needed to pass previousIntegral so we can continue where
+        // another integral left off
+        constructor(b, type=window.number, previousIntegral=null) {
+            // fmap and apply are only needed if the type of the behavior is not numerical
+            // for example if you have your own vector class, you will need to make it implement fmap (<$>) and
+            // apply (<*>)
+            // the fmap and apply functions must make new instances of the class
+            
+            b = lift(b);
+
+            const { pure, fmap, apply } = fran.getApplicative(type);
+
+            /*
+             * idea to make integrals work:
+             * pass a "state" object around with external events and assign a id to each integral?
+             *
+             */
+
+            
+            super(t => {
+                if (this.previousTime !== null) {
+                    let val = b.at(t)[0];
+
+                    // TODO: Don't we need an interval? I thought we would have to
+                    // make the interval = difference in time since last check
+                    // setting it to 20 is probably a bug, but works for now
+                    const interval = 20; //t - previousTime;
+                    const vf = fmap(v => prev => prev + (v * interval), val);
+                    this.integral = apply(vf, this.integral);
+                }
+
+                this.previousTime = t;
+                return this.integral;
+
+            });
+
+            this.previousTime = null;
+            this.integral = previousIntegral === null ? pure(0) : previousIntegral;
+        }
+    }
+
+    class RiemannIntegral extends Behavior {
+        // full integral from fran.startTime to t
+        // inefficient, but complete
+        constructor(b) {
+            b = lift(b);
+            super(t => {
+                let cursor = t,
+                    sum = 0,
+                    interval = 10,
+                    from = fran.startTime;
+                
+                for (let i=from; i<=t; i+=interval) {
+                    sum += b.at(i)[0] * interval;
+                }
+                return sum;
+            });
+        }
+    }
+
+    class VerletIntegration extends Behavior {
+        constructor(initial=0, b=0) {
+            b = lift(b);
+            // Behavior b must be a Number
+            super(t => {
+                this.velocity -= b.at(t)[0] - this.previousValue;
+                this.previousValue = this.velocity + this.previousValue;
+                return this.previousValue;
+            });
+            this.previousValue = initial;
+            this.velocity = 0;
         }
     }
 
@@ -217,8 +385,12 @@ function makeBehaviorFunctions(fran) {
         at: (b, t) => lift(b).at(t),
         later: (b, ms) => new Later(b, ms),
         time: () => new Behavior(t => t),
+        integral: (...args) => new Integral(...args),
+        stateIntegral: (...args) => new StateIntegral(...args),
+        slowIntegral: (...args) => new RiemannIntegral(...args),
         transform: (b, f) => new Transform(b, f),
-        until: (b, event, listener) => new UntilB(b, event, listener),
+        untilExternalEvent: (...args) => new UntilExternalEvent(...args),
+        untilInternalEvent: (...args) => new UntilInternalEvent(...args),
         neg: exports.comp
     });
 
@@ -226,6 +398,9 @@ function makeBehaviorFunctions(fran) {
 }
 
 function lift(term) {
+    if (term === null || term === undefined) {
+        return term;
+    }
     if (term.isBehavior) {
         return term; // assume its a behavior already
     }

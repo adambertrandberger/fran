@@ -19,11 +19,14 @@ const makeUpdateRenderLoop = (update) => {
     const MS_PER_UPDATE = 10, // update every 10ms
           raf = getRAF(window);
     
-    let loopTime = 0;
+    let loopTime = 0,
+        lastTime = new Date().getTime();
     return () => {
         const loop = () => {
             raf(() => {
-                update(loopTime+=MS_PER_UPDATE);
+                const dtime = (new Date().getTime() - lastTime);
+                lastTime = new Date().getTime();
+                update(loopTime+=dtime);
                 raf(loop());
             });
         };

@@ -6,6 +6,7 @@ class Cache {
         this.keys = [];
         this.values = [];
         this.retentionDuration = retentionDuration;
+        this.tolerence = 100; // additional milliseconds of cache to keep in case of race condition
     }
 
     removeOldest() {
@@ -47,7 +48,7 @@ class Cache {
                 }
                 current = this.keys[cursor];
             }
-            return this.values[cursor];
+            return [current, this.values[cursor]];
         }
         /*
           const length = this.keys.length;
@@ -85,33 +86,18 @@ class Cache {
 
     normalize(time) {
         // not efficient
-        while (time - this.keys[0] > this.retentionDuration) {
-            if (this.keys.length < 2) {
+        const duration = this.retentionDuration + this.tolerence;
+        // I beleive there is some sort of small race condition going on here
+        // if an event happens exactly at the retention duration -- or maybe its just a bug
+        // anyway i added a tolerence to add room for error
+        while (time - this.keys[0] > duration) {
+            if (this.keys.length < 2) { // always keep at least 1 record if an event ever happened
                 break;
             }
             this.removeOldest();
         }
     }
 }
-
-function testCache() {
-    const c = new Cache(30);
-    c.add(10, 'a');
-    c.add(20, 'b');
-    c.add(30, 'c');
-    c.add(40, 'd');
-    c.add(50, 'e');
-    console.log(c);
-
-    console.log('nearest 30', c.nearest(30));
-    console.log('nearest 20', c.nearest(20));
-    console.log('nearest 10', c.nearest(10));
-    console.log('nearest 40', c.nearest(40));
-    console.log('nearest 50', c.nearest(50));
-    console.log('nearest 60', c.nearest(60));
-    console.log('nearest 35 -- should be c', c.nearest(350));    
-}
-testCache();
 
 class Fran {
     constructor() {
@@ -120,8 +106,7 @@ class Fran {
         // when `tick` is called
         this.objects = [];
         
-        // predicate events        
-        this.predicates = [];
+        this.internalEvents = [];
 
         this.time = 0;
 
@@ -131,13 +116,48 @@ class Fran {
 
         this.currentEventId = 0;
 
+        this.startTime = null;
+
+        this.applicatives = new Map();
+        this.applicatives.set(window.number, {
+            pure: v => v,
+            fmap: (f, v) => f(v),
+            apply: (vf, v) => vf(v)
+        });
+
         const exports = makeBehaviorFunctions(this);
         Object.assign(window, exports);
     }
 
-    createEvent(arrow) {
+    defineApplicative(type, functions) {
+        // type can be any value actually -- I use constructor function as the type, but you could use a string too
+        if (!functions['apply'] || !functions['pure'] || !functions['fmap']) {
+            throw new Error('Must supply "pure", "fmap" and "apply" to "registerType"');
+        }
+        this.applicatives.set(type, functions);
+    }
+
+    getApplicative(type) {
+        const functions = this.applicatives.get(type);
+        if (functions === undefined) {
+            const name = typeof type === 'function' ? type.name : type;
+            throw new Error('You need to define "' + name + '" as an applicative with "defineApplicative"');
+        }
+        return functions;
+    }
+
+    createInternalEvent(emitter) {
+        return (...args) => {
+            const id = this.currentEventId++; // TODO: event ids are shared between external and internal events, is this ok?
+            const event = new InternalEvent(id, (...args) => emitter(...args));
+            this.internalEvents.push(event);
+            return event;
+        };
+    }
+
+    createExternalEvent(arrow) {
         const id = this.currentEventId++;
-        const event =  new Event(id, arrow, (...vals) => {
+        const event =  new ExternalEvent(id, arrow, (...vals) => {
             const cache = this.externalEventCache;
             cache[id].add(this.time, vals);
         });
@@ -149,6 +169,10 @@ class Fran {
         if (time === undefined) {
             time = new Date().getTime();
         }
+        if (this.startTime === null) {
+            this.startTime = time; // needed for full integration
+            // because we need to know what t_0 is for the entire animation
+        }
         this.time = time;
     }
 
@@ -159,6 +183,8 @@ class Fran {
         
         Object.defineProperty(o, propertyKey, {
             get: () => {
+                if (behavior === null || behavior === undefined)
+                    return behavior;
                 return behavior.at(this.time)[0];
             },
             set: function (value) {
