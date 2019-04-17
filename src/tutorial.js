@@ -9,7 +9,7 @@ const centerY = () => canvas.height/2;
 const boundX = (b, r=50) => mul(b, centerX()-r);
 const boundY = (b, r=50) => mul(b, centerY()-r);
 
-const mouse = new Event(update => Arrow.fix(a => Arrow.seq([
+const mouse = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
     new ElemArrow('canvas'),
     new EventArrow('mousemove'),
     (e => {
@@ -20,52 +20,6 @@ const mouse = new Event(update => Arrow.fix(a => Arrow.seq([
     }).lift(),
     a
 ])));
-
-const mouseX = new Event(update => Arrow.fix(a => Arrow.seq([
-    new ElemArrow('canvas'),
-    new EventArrow('mousemove'),
-    (e => {
-        update(e.clientX - e.target.offsetLeft);
-    }).lift(),
-    a
-])));
-
-const mouseY = delay => later(until(200, canvas, 'mousemove', function (e) {
-    return e.clientY - e.target.offsetTop;
-}), delay);
-
-/*
-  const mouse = delay => later(until(new Vector(0, 0), canvas, 'mousemove', function (e) {
-  const x = e.clientX - e.target.offsetLeft,
-  y = e.clientY - e.target.offsetTop;
-
-  return new Vector(x, y);
-  }), delay/10);
-*/
-
-/*
-  const mouse = (delay=0) => until(new Vector(0, 0), update => arrowCtr(
-  new LiftedArrow(e => {
-  const x = e.clientX - e.target.offsetLeft,
-  y = e.clientY - e.target.offsetTop;
-
-  console.log('adsf');
-  setTimeout(() => update(new Vector(x, y)), delay); // this is what "fork" does
-  })));
-
-  const mouseY = (delay=0) => until(0, update => arrowCtr(
-  new LiftedArrow(e => {
-  const y = e.clientY - e.target.offsetTop;
-  setTimeout(() => update(y), delay); //this is what "fork" does
-  })));
-
-  const mouseX = (delay=0) => until(0, update => arrowCtr(
-  new LiftedArrow(e => {
-  const x = e.clientX - e.target.offsetLeft;
-
-  setTimeout(() => update(x), delay); // this is what "fork" does
-  })));
-*/
 
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
@@ -87,10 +41,7 @@ const buttons = {
     asdf: () => {
         const ball = new Ball();
         ball.y  = 100;
-        ball.x = later(until(200, canvas, 'mousemove', function (e) {
-            return e.clientX - e.target.offsetLeft;
-        }), 100);
-        
+        ball.x = later(until(200, mouse, v => v.x), 1000);
         return ball;
     },
     

@@ -1,14 +1,11 @@
 class Event {
-    constructor(arrow) {
-        const arrowRef = arrow(this.update.bind(this));
-        arrowRef.run();
-        
-        this.callbacks = [];
+    constructor(id, arrow, cache) {
+        this.arrow = arrow(this.update.bind(this));
+        this.id = id;
+        this.cache = cache;
     }
 
     update(...vals) {
-        for (const callback of this.callbacks) {
-            callback(...vals);
-        }
+        this.cache(...vals);
     }
 }

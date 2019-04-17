@@ -179,26 +179,22 @@ function makeBehaviorFunctions(fran) {
     }
 
     class UntilB extends Behavior {
-        constructor(b, target, type, listener, once=false) {
+        constructor(b, event, listener) {
             let retentionDuration = 0,
                 frozenVal = b,
                 called = false;
 
             super(t => {
-                const cache = fran.externalEventCache[type];
+                const cache = fran.externalEventCache[event.id];
                 cache.ensureRetentionDuration(fran.time - t); // TODO: theres probably a more efficient way
                 // if redentionDuration is negative, it means we are trying to look into the future, should throw exception
                 if (cache.size() > 0) {
-                    const objAndEvent = cache.nearest(t);
-                    if (objAndEvent === null) {
+                    const vals = cache.nearest(t);
+                    if (vals === null) {
                         return frozenVal;
                     }
 
-                    if (called && once) {
-                        return frozenVal;
-                    }
-
-                    frozenVal = listener.bind(objAndEvent[0])(objAndEvent[1]);
+                    frozenVal = listener(...vals);
                     called = true;
                     return frozenVal;
                 }
@@ -206,7 +202,7 @@ function makeBehaviorFunctions(fran) {
 
             });
             
-            fran.registerExternalEventListener(target, type);
+            fran.registerExternalEventListener(event);
         }
     }
 
@@ -222,7 +218,7 @@ function makeBehaviorFunctions(fran) {
         later: (b, ms) => new Later(b, ms),
         time: () => new Behavior(t => t),
         transform: (b, f) => new Transform(b, f),
-        until: (b, target, type, listener, once=false) => new UntilB(b, target, type, listener, once),
+        until: (b, event, listener) => new UntilB(b, event, listener),
         neg: exports.comp
     });
 

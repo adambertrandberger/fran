@@ -127,8 +127,22 @@ class Fran {
 
         this.externalEventCache = {}; // cache of values for external events (captures event object)
 
+        this.externalEvents = [];
+
+        this.currentEventId = 0;
+
         const exports = makeBehaviorFunctions(this);
         Object.assign(window, exports);
+    }
+
+    createEvent(arrow) {
+        const id = this.currentEventId++;
+        const event =  new Event(id, arrow, (...vals) => {
+            const cache = this.externalEventCache;
+            cache[id].add(this.time, vals);
+        });
+        this.externalEvents.push(event); // store them so we can destroy them later (maybe)
+        return event;
     }
 
     tick(time) {
@@ -154,15 +168,11 @@ class Fran {
     }
 
     // TODO: need some way of removing these when some things get stale (like behaviors that aren't around anymore)
-    registerExternalEventListener(target, type, maxRetentionDuration=1) {
-        if (this.externalEventCache[type] === undefined) {
+    registerExternalEventListener(event, maxRetentionDuration=1) {
+        if (this.externalEventCache[event.id] === undefined) { // if this is not already registered
             const cache = this.externalEventCache;
-            cache[type] = new Cache(maxRetentionDuration);
-            
-            const fran = this;
-            target.addEventListener(type, function (e) { // TODO?: not a big deal but maybe we should deregister if we sense not being used
-                cache[type].add(fran.time, [this, e]);
-            });
+            cache[event.id] = new Cache(maxRetentionDuration);
+            event.arrow.run();
         }
     }
 
