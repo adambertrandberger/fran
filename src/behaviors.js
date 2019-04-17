@@ -179,7 +179,7 @@ function makeBehaviorFunctions(fran) {
     }
 
     class UntilB extends Behavior {
-        constructor(b, event, listener) {
+        constructor(b, event, listener=v=>v) {
             let retentionDuration = 0,
                 frozenVal = b,
                 called = false;

@@ -21,6 +21,26 @@ const mouse = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
     a
 ])));
 
+const mouseX = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    (e => {
+        const x = e.clientX - e.target.offsetLeft;
+        update(x);
+    }).lift(),
+    a
+])));
+
+const mouseY = fran.createEvent(update => Arrow.fix(a => Arrow.seq([
+    new ElemArrow('canvas'),
+    new EventArrow('mousemove'),
+    (e => {
+        const y = e.clientY - e.target.offsetTop;
+        update(y);
+    }).lift(),
+    a
+])));
+
 const cycleRainbow = (b1, max) => transform(b1, t => {
     const length = t;
     const maxLength = max;
@@ -41,7 +61,9 @@ const buttons = {
     asdf: () => {
         const ball = new Ball();
         ball.y  = 100;
-        ball.x = later(until(200, mouse, v => v.x), 1000);
+        ball.x = later(until(200, mouseX), 1000);
+        // or we could do:
+        // ball.x = later(until(200, mouse, v => v.x), 1000);
         return ball;
     },
     
@@ -50,8 +72,6 @@ const buttons = {
         let nums = [];
 
         
-        const goToMouse = t => mouse(t);
-
         // clock face - hours
         let delay = 0;
         for (let i=12; i>0; --i) {
@@ -63,7 +83,7 @@ const buttons = {
             });
 
             const radius = 50;
-            move(addv(goToMouse(delay), lift(new Vector(Math.cos(part)*50, Math.sin(part)*50))), img);
+            move(addv(later(until(new Vector(0, 0), mouse), delay), lift(new Vector(Math.cos(part)*50, Math.sin(part)*50))), img);
             //            setTimeout(() => deregisterB(img, 'x'), 5000);  // TODO to show how to freeze a behavior
             nums.unshift(img);
             delay += delayStep;
@@ -101,7 +121,7 @@ const buttons = {
             const wiggle = mul(sin(div(time(), 100)), 100);
             const waggle = mul(cos(div(time(), 100)), 100);
 
-            moveXY(addb(x, mouseX(delay)), addb(y, mouseY(delay)), img);
+            moveXY(addb(x, later(until(0, mouseX), delay)), addb(y, later(until(0, mouseY), delay)), img);
             nums.unshift(img);
             delay += delayStep;
         }
@@ -123,9 +143,7 @@ const buttons = {
             const x = mul(sin(rad), radius);
             const y = mul(cos(rad), radius);
 
-            //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
-            
-            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
+            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -150,7 +168,7 @@ const buttons = {
 
             //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
+            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
@@ -176,7 +194,7 @@ const buttons = {
 
             //            const v = addv(goToMouse(delay), lift(new Vector(x, y)));
             
-            moveXY(addb(mouseX(delay), x), addb(mouseY(delay), y), img);
+            moveXY(addb(later(until(0, mouseX), delay), x), addb(later(until(0, mouseY), delay), y), img);
             nums.unshift(img);
             delay += delayStep;
             radius += 10;
