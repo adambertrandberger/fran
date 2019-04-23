@@ -53,6 +53,20 @@ const mouseY = fran.createExternalEvent(update => Arrow.fix(a => Arrow.seq([
 
 const buttons = {
 
+    internalEvent: () => {
+        const ball = new Ball();
+        ball.pos = untilInternalEvent(new Vector(0, 0), prev => {
+            if (fran.time > 1000) {
+                return new Vector(100, 100);
+            }
+            // TODO: prev isn't great, it is always null the first time
+            // Also, should allow for explicitly saying "return old behavior"
+
+            // TODO: Need untilB switching
+        });
+        return ball;
+    },
+
     "Clock2": () => {
         let buffer = [];
         for (let i=0; i<30; ++i) {
@@ -61,16 +75,16 @@ const buttons = {
         const speed = 0.15;
 
         const b = untilExternalEvent(new Vector(0, 0), mouse, (mouseV, prevPos) => {
-            return untilInternalEvent(t => buffer[0], pos => {
+            return lift(t => {
                 // TODO: this is definitely a hack because I'm not using this
                 // as an internal event, i'm using it for its side effect
                 // however, it is more efficient than most things in fran
-                if (pos !== null) {
-                    buffer[0].iadd(mouseV.sub(buffer[0]).mul(speed));
-                    for (let i=1; i<30; ++i) {
-                        buffer[i].iadd(buffer[i-1].sub(buffer[i]).mul(speed));
-                    }
+                buffer[0].iadd(mouseV.sub(buffer[0]).mul(speed));
+
+                for (let i=1; i<30; ++i) {
+                    buffer[i].iadd(buffer[i-1].sub(buffer[i]).mul(speed));
                 }
+                return buffer[0];
             });
         });
 
@@ -487,20 +501,6 @@ const buttons = {
         return ball;
     },
 
-
-    internalEvent: () => {
-        const ball = new Ball();
-        ball.pos = untilInternalEvent(new Vector(0, 0), prev => {
-            if (fran.time > 1000) {
-                return new Vector(100, 100);
-            }
-            // TODO: prev isn't great, it is always null the first time
-            // Also, should allow for explicitly saying "return old behavior"
-
-            // TODO: Need untilB switching
-        });
-        return ball;
-    },
 
     vectorIntegralOfIntegral: () => {
         const ball = new Ball();
