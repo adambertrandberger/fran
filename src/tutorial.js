@@ -53,20 +53,6 @@ const mouseY = fran.createExternalEvent(update => Arrow.fix(a => Arrow.seq([
 
 const buttons = {
 
-    internalEvent: () => {
-        const ball = new Ball();
-        ball.pos = untilInternalEvent(new Vector(0, 0), prev => {
-            if (fran.time > 1000) {
-                return new Vector(100, 100);
-            }
-            // TODO: prev isn't great, it is always null the first time
-            // Also, should allow for explicitly saying "return old behavior"
-
-            // TODO: Need untilB switching
-        });
-        return ball;
-    },
-
     "Clock2": () => {
         let buffer = [];
         for (let i=0; i<30; ++i) {
@@ -216,6 +202,21 @@ const buttons = {
         }
 
         return over(...nums);
+    },
+
+    
+    internalEvent: () => {
+        const ball = new Ball();
+        ball.pos = untilInternalEvent(new Vector(0, 0), prev => {
+            if (fran.time > 1000) {
+                return new Vector(100, 100);
+            }
+            // TODO: prev isn't great, it is always null the first time
+            // Also, should allow for explicitly saying "return old behavior"
+
+            // TODO: Need untilB switching
+        });
+        return ball;
     },
 
     clock: () => {

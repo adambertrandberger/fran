@@ -179,11 +179,83 @@ Click on a button to run and show code
          const canvas = document.querySelector('canvas'),
                ctx = canvas.getContext('2d');
 
-         const fran = new Fran();
-         fran.runAnimation(() => {
+         /*
+            const fran = new Fran();
+            fran.runAnimation(() => {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            window.image.render(ctx);
+            });
+          */
+         
+         function render() {
              ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-             window.image.render(ctx);
-         });             
+             if (window.image) {
+                 window.image.render(ctx);
+             }
+         }
+
+         const fran = new Fran();
+         fran.tick(new Date().getTime());
+         const update = new LiftedArrow(() => { render(); fran.tick(new Date().getTime()) });
+
+         let alpha = 10;
+         let delay = 16;
+         const refreshLoop = Arrow.fix(a => Arrow.seq([
+             update,
+             new DelayArrow(16),
+             a
+         ]));
+
+         /* const arrow = Arrow.fix(a =>
+          *     Arrow.seq([
+          *         new ElemArrow('canvas'),
+          *         new EventArrow('mousemove'),
+          *         Arrow.any([
+          *             refreshLoop,
+          *             
+          *         ]),
+          *     ])
+          * );
+          * arrow.run(); */
+
+	typecheck = false;
+
+         const arrow = Arrow.fix(a => Arrow.any([
+             Arrow.seq([
+    	new ElemArrow('canvas'),
+    	new EventArrow('mousemove'),
+                 Arrow.any([
+                     (0).lift().seq(Arrow.fix(b => 
+                         Arrow.try(
+                             Arrow.lift(x => {
+console.log(x);
+                                 if (x >= 50) throw 0;
+                                 else return x+1;
+                             }),
+                             Arrow.seq([
+                                 new DelayArrow(16),
+                                 update.remember(),
+                                 b
+                             ]),
+                             new DelayArrow(16)
+                         )
+                     )),
+                     a
+                 ]),
+                 a
+             ]),
+             Arrow.seq([
+                 new DelayArrow(1000),
+Arrow.lift(x => console.log(x)),
+                 update,
+                 a
+             ])
+           ])
+         );
+         (0).lift().seq(arrow).run()
+         //         arrow.run();
+
+         
         </script>
 
         <!-- Library user code: -->
